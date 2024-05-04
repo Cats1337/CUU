@@ -1,0 +1,9 @@
+name: CUU
+version: '${project.version}'
+main: io.github.cats1337.cuu.CUU
+api-version: '1.20'
+author: Cats1337
+description: Cats UberItems Utilities. Plugin commissioned by linktr.ee/xetho__
+website: https://cats1337.github.io
+depend:
+  - UberItems

@@ -1,0 +1,37 @@
+items:
+  DOOM_CROWN:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_CHESTPLATE:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_LEGGINGS:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_BOOTS:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_BOW:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_AXE:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_PICKAXE:
+    owner: "null"
+    crafted: false
+    exists: false
+  DOOM_SWORD:
+    owner: "null"
+    exists: false
+variables:
+  lifesteal: 15 # 15%
+  ritualActive: false
+  ritualTime: 30 # minutes
+  dragonRitualTime: 15 # minutes
