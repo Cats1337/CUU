@@ -35,3 +35,5 @@ variables:
   ritualActive: false
   ritualTime: 30 # minutes
   dragonRitualTime: 15 # minutes
+  maxPotions: 2 # -1 = infinite
+  maxArtifacts: 16 # -1 = infinite

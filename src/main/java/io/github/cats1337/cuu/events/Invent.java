@@ -231,14 +231,15 @@ public class Invent implements Listener {
 
             case "Doom Potion":
                 int currentDoomPotionCount = NameCheck.extractInvNameCount(p).getOrDefault("Doom Potion", 0);
-                int remainingDoomPotions = 2 - currentDoomPotionCount;
+                int maxPotions = ItemManager.getConfigInt("maxPotions");
+                int remainingDoomPotions = maxPotions - currentDoomPotionCount;
                 int amountPot = pickedUpItem.getAmount();
-                if (currentDoomPotionCount == 2) {
+                if (currentDoomPotionCount == maxPotions) {
                     e.setCancelled(true); // Cancel pickup if max count reached
                     break;
                 }
 
-                if (currentDoomPotionCount >= 2 || currentDoomPotionCount + amountPot > 2) {
+                if (currentDoomPotionCount >= maxPotions || currentDoomPotionCount + amountPot > maxPotions) {
                     e.setCancelled(true); // Cancel pickup if max count reached or picking up would exceed max
                     int excessAmount = Math.max(amountPot - remainingDoomPotions, 0);
                     if (excessAmount > 0) {
@@ -252,14 +253,15 @@ public class Invent implements Listener {
 
             case "Healing Artifact":
                 int currentHealingArtifactCount = NameCheck.extractInvNameCount(p).getOrDefault("Healing Artifact", 0);
-                int remainingHealingArtifacts = 16 - currentHealingArtifactCount;
+                int maxArtifacts = ItemManager.getConfigInt("maxArtifacts");
+                int remainingHealingArtifacts = maxArtifacts - currentHealingArtifactCount;
                 int amountHeal = pickedUpItem.getAmount();
-                if (currentHealingArtifactCount == 16) {
+                if (currentHealingArtifactCount == maxArtifacts) {
                     e.setCancelled(true); // Cancel pickup if max count reached
                     break;
                 }
 
-                if (currentHealingArtifactCount >= 16 || currentHealingArtifactCount + amountHeal > 16) {
+                if (currentHealingArtifactCount >= maxArtifacts || currentHealingArtifactCount + amountHeal > maxArtifacts) {
                     e.setCancelled(true); // Cancel pickup if max count reached or picking up would exceed max
                     int excessAmount = Math.max(amountHeal - remainingHealingArtifacts, 0);
                     if (excessAmount > 0) {

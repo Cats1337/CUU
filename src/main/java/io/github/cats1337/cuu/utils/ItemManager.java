@@ -200,6 +200,9 @@ public class ItemManager {
         } else {
             return (config.getInt("variables.ritualTime") * 60);
         }
+    }
 
+    public static int getConfigInt(String var){
+        return (config.getInt("variables." + var));
     }
 }
