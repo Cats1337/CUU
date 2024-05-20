@@ -22,16 +22,17 @@ import java.util.List;
 
 @Command(name = "CUU")
 public class UtilCommands implements ICommand {
-    private final List<String> subCommands = List.of("help", "set", "check", "list", "remove");
+    private final List<String> subCommands = List.of("help", "set", "check", "list", "remove", "cancel");
 
     String help = "\n &9&lCats &5&lUberItems &b&lUtils &e&l" + Tiny.of("commands\n" ) +
             " &b/cuu help &7- &fDisplay this message\n" +
-            " &b/cuu set <exists/crafted/owner> <itemName> <value> &7- &fSet item information\n" +
+            " &b/cuu set <exists/crafted> <itemName> <value> &7- &fSet item information\n" +
             " &b/cuu check <player> &7- &fCheck if a player owns any items\n" +
             " &b/cuu check <exists/crafted/owner> <itemName> &7- &fCheck item information\n" +
             " &b/cuu list &7- &fList all items and their owners\n" +
             " &b/cuu list <player> &7- &fList all items owned by a player\n" +
-            " &b/cuu remove owner <itemName> &7- &fRemove the owner of an item\n";
+            " &b/cuu remove owner <itemName> &7- &fRemove the owner of an item\n" +
+            " &b/cuu cancel &7- &fCancel any active ritual";
 
 
     @Override
@@ -80,7 +81,7 @@ public class UtilCommands implements ICommand {
                     switch (subCommand) {
                         case "exists":
                             // exists item t/f
-                            Text.of(prefix + "§4" + dispName + " §3Crafted status set to: " + (boolValue ? "§aTrue" : "§cFalse")).send(sender);
+                            Text.of(prefix + "§4" + dispName + " §3Exists status set to: " + (boolValue ? "§aTrue" : "§cFalse")).send(sender);
                             ItemManager.setExists(confName, boolValue);
                             break;
                         case "crafted":
@@ -90,33 +91,6 @@ public class UtilCommands implements ICommand {
                         default:
                             Text.of("§cInvalid argument. Usage: /CUU set <exists/crafted/owner> <itemName> <value>").send(sender);
                             return false;
-                    }
-                }
-                break;
-
-            case "remove":
-                if (args.length < 3) {
-                    // /cuu remove bossbar
-                    if (args[1].equalsIgnoreCase("bossbar")) {
-                        DragonSword.removeBossbars();
-                        Rituals.removeBossbars();
-                        Text.of(prefix + "§3Bossbars §cremoved§3.").send(sender);
-                        return true;
-                    }
-                    Text.of("§cUsage: /CUU remove <owner> <itemName>").send(sender);
-                    return false;
-                } else {
-                    String subCommand = args[1];
-                    String itemName = args[2];
-                    String confName = NameCheck.convertToConfigName(itemName);
-                    String dispName = NameCheck.convertToDisplayName(itemName);
-
-                    if (subCommand.equals("owner")) {
-                        ItemManager.removeItemOwner(confName);
-                        Text.of(prefix + "§4" + dispName + " §3Owner §cremoved").send(sender);
-                    } else {
-                        Text.of("§cInvalid argument. Usage: /CUU remove <owner> <itemName>").send(sender);
-                        return false;
                     }
                 }
                 break;
@@ -191,6 +165,37 @@ public class UtilCommands implements ICommand {
                     }
                 }
                 break;
+
+            case "remove":
+                if (args.length < 3) {
+                    // /cuu remove bossbar
+                    Text.of("§cUsage: /CUU remove <owner> <itemName>").send(sender);
+                    return false;
+                } else {
+                    String subCommand = args[1];
+                    String itemName = args[2];
+                    String confName = NameCheck.convertToConfigName(itemName);
+                    String dispName = NameCheck.convertToDisplayName(itemName);
+
+                    if (subCommand.equals("owner")) {
+                        ItemManager.removeItemOwner(confName);
+                        Text.of(prefix + "§4" + dispName + " §3Owner §cremoved").send(sender);
+                    } else {
+                        Text.of("§cInvalid argument. Usage: /CUU remove <owner> <itemName>").send(sender);
+                        return false;
+                    }
+                }
+                break;
+
+            case "cancel":
+                if (ItemManager.getRitualActive()) {
+                    Rituals.cancelRitual();
+                    DragonSword.cancelDsword();
+                    Text.of(prefix + "§3Ritual cancelled.").send(sender);
+                } else {
+                    Text.of(prefix + "§cNo active ritual to cancel.").send(sender);
+                }
+                break;
         }
         return true;
     }
@@ -199,6 +204,7 @@ public class UtilCommands implements ICommand {
 //            "&b/cuu get <exists/crafted/owner> <itemName> &7- &fGet item information\n" +
 //            "&b/cuu set <exists/crafted/owner> <itemName> <value> &7- &fSet item information\n" +
 // "&b/cuu check <player> &7- &fCheck if a player owns any items\n" +
+// "&b/cuu cancel &7- &fCancels any active ritual\n" +
 //            "&b/cuu check owner <itemName> &7- &fCheck the owner of an item\n" +
 //            "&b/cuu list &7- &fList all items and their owners\n" +
 // "&b/cuu list <player> &7- &fList all items owned by a player\n" +
@@ -206,76 +212,69 @@ public class UtilCommands implements ICommand {
 
     @Override
     public @NotNull List<@NotNull String> tab(@NotNull TabCompleteContext tab) {
-        @NotNull String[] args = tab.args();
+        try {
+            @NotNull String[] args = tab.args();
 
-        // list of items from config
-        @NotNull String[] items = ItemManager.getConfigItems();
+            // list of items from config
+            @NotNull String[] items = ItemManager.getConfigItems();
 
-        if (args.length == 1) {
-            return ITabCompleterHelper.tabComplete(args[0], subCommands);
+            if (args.length == 1) {
+                if(args[0].equalsIgnoreCase("cancel")){ return new ArrayList<>(); }
+
+                return ITabCompleterHelper.tabComplete(args[0], subCommands);
+            }
+
+            if (args.length == 2) {
+                // check <player> | list <player> | cancel
+                if (args[0].equalsIgnoreCase("check")) {
+                    List<String> completions = new ArrayList<>(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
+                    completions.add("exists");
+                    completions.add("crafted");
+                    completions.add("owner");
+                    return ITabCompleterHelper.tabComplete(args[1], completions);
+                }
+
+                if (args[0].equalsIgnoreCase("list")) {
+                    List<String> completions = new ArrayList<>(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
+                    completions.add("owner");
+                    return ITabCompleterHelper.tabComplete(args[1], completions);
+                }
+
+                if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner")) {
+                    return ITabCompleterHelper.tabComplete(args[1], Arrays.asList(items));
+                }
+
+                if (args[0].equalsIgnoreCase("set")) {
+                    return ITabCompleterHelper.tabComplete(args[1], List.of("exists", "crafted"));
+                }
+
+                if (args[0].equalsIgnoreCase("remove")) {
+                    return ITabCompleterHelper.tabComplete(args[1], List.of("owner"));
+                }
+            }
+
+            if (args.length == 3) {
+                if (args[0].equalsIgnoreCase("check") || (args[0].equalsIgnoreCase("set") && (args[1].equalsIgnoreCase("owner") || args[1].equalsIgnoreCase("exists") || args[1].equalsIgnoreCase("crafted")))) {
+                    return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
+                }
+
+                if (args[0].equalsIgnoreCase("remove") && args[1].equalsIgnoreCase("owner")) {
+                    return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
+                }
+
+                if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner")) {
+                    return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
+                }
+            }
+
+            if (args.length == 4 && (args[0].equalsIgnoreCase("set") && args[1].equalsIgnoreCase("exists") || args[1].equalsIgnoreCase("crafted"))) {
+                return ITabCompleterHelper.tabComplete(args[3], List.of("true", "false"));
+            }
+
+            return new ArrayList<>();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
         }
-
-        if (args.length == 2) {
-            // check <player> | list <player>
-
-            // return list of players AND 'owner' for 'check / list' subcommands
-            if (args[0].equalsIgnoreCase("check")) {
-                List<String> completions = new ArrayList<>(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
-                completions.add("exists");
-                completions.add("crafted");
-                completions.add("owner");
-                return ITabCompleterHelper.tabComplete(args[1], completions);
-            }
-
-            if (args[0].equalsIgnoreCase("list")) {
-                List<String> completions = new ArrayList<>(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
-                completions.add("owner");
-                return ITabCompleterHelper.tabComplete(args[1], completions);
-            }
-
-
-            // check owner <itemName>
-            if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner")) {
-                // Tab complete item names for 'check' subcommand
-                return ITabCompleterHelper.tabComplete(args[1], Arrays.asList(items));
-            }
-
-            // check <exists/crafted/owner> ..<itemName> \|/ set <exists/crafted/owner> ..<itemName> <value>
-            if (args[0].equalsIgnoreCase("set")) {
-                // Tab complete options for 'get' and 'set' subcommands
-                return ITabCompleterHelper.tabComplete(args[1], List.of("exists", "crafted", "owner"));
-            }
-
-            // remove owner ..<itemName>
-            if (args[0].equalsIgnoreCase("remove")) {
-                // Tab complete 'owner' for 'remove' subcommand
-                return ITabCompleterHelper.tabComplete(args[1], List.of("owner", "bossbar"));
-            }
-        }
-
-        if (args.length == 3) {
-
-            // check <exists/crafted/owner> <itemName> |/ set <exists/crafted/owner> <itemName> ..<value>
-            if (args[0].equalsIgnoreCase("check") || (args[0].equalsIgnoreCase("set") && (args[1].equalsIgnoreCase("owner") || args[1].equalsIgnoreCase("exists") || args[1].equalsIgnoreCase("crafted")))) {
-                return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
-            }
-
-            // remove owner <itemName>
-            if (args[0].equalsIgnoreCase("remove") && args[1].equalsIgnoreCase("owner")) {
-                // Tab complete item names for 'remove owner' subcommand
-                return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
-            }
-
-            // check owner <itemName>
-            if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner")) {
-                return ITabCompleterHelper.tabComplete(args[2], Arrays.asList(items));
-            }
-        }
-
-        // set <exists/crafted/owner> <itemName> <value>
-        if (args.length == 4 && (args[0].equalsIgnoreCase("set") && (args[1].equalsIgnoreCase("owner") || args[1].equalsIgnoreCase("exists") || args[1].equalsIgnoreCase("crafted")))) {
-            return ITabCompleterHelper.tabComplete(args[3], List.of("true", "false"));
-        }
-        return new ArrayList<>();
     }
 }

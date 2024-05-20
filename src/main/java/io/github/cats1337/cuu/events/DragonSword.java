@@ -19,10 +19,13 @@ import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import thirtyvirus.uber.UberItems;
 
 public class DragonSword implements Listener {
@@ -49,8 +52,18 @@ public class DragonSword implements Listener {
 //                    Location loc = dragonBattle.getEndPortalLocation();
                     Location btmPod = findBottomPodium(world);
                     spawnPodium(btmPod);
+                    assert btmPod != null;
+                    replaceBlocks(btmPod, Material.RED_STAINED_GLASS);
+                    ItemManager.setRitualActive(true);
                 }
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH) // Highest priority, meaning it will be called first
+    public void onPortalCreateEvent(PortalCreateEvent e) {
+        if(e.getEntity() instanceof EnderDragon && e.getEntity().getWorld().getName().equals("world_the_end")){
+            e.setCancelled(true);
         }
     }
 
@@ -113,10 +126,19 @@ public class DragonSword implements Listener {
         }, 180L);
 
         // wait 15 minutes before replacing the blocks back to end portal
-        Bukkit.getScheduler().runTaskLater(CUU.getInstance(), () -> {
+        int taskid = new BukkitRunnable() {
+            @Override
+            public void run() {
+                replaceBlocks(loc, Material.END_PORTAL);
+            }
+        }.runTaskLater(CUU.getInstance(), ItemManager.getRitualTime("dragon") * 20L).getTaskId();
+
+        // If the ritual is no longer active, cancel the task, and replace the blocks back to end portal
+        if (!ItemManager.getRitualActive()) {
+            Bukkit.getScheduler().cancelTask(taskid);
             replaceBlocks(loc, Material.END_PORTAL);
-            System.out.println("Replaced blocks back to end portal");
-        }, ItemManager.getRitualTime("dragon") * 20L);
+        }
+
     }
 
     // Looking at podium from top down
@@ -156,7 +178,6 @@ public class DragonSword implements Listener {
             if (block.getType() == Material.BEDROCK) {
                 Location loc = new Location(world, 0, i, 0);
                 loc.add(0, 1, 0); // add 1 to y so it's the portal level
-                System.out.println(loc);
                 return loc;
             }
         }
@@ -167,74 +188,76 @@ public class DragonSword implements Listener {
     public static void showBossBar(String title, int seconds) {
         bossBar.setTitle(title);
 
-        // add all players to the bossbar
         for (Player p : Bukkit.getOnlinePlayers()) {
             bossBar.addPlayer(p);
             p.playSound(p.getLocation(), "block.end_portal.spawn", 2F, .05F);
         }
 
-        // reduce bossbar every second, async thread so server doesn't crash, oopsies
-        Bukkit.getScheduler().runTaskAsynchronously(CUU.getInstance(), () -> {
-            for (int i = seconds; i >= 0; i--) {
-                int elapsedSeconds = seconds - i;
-                int remainingSeconds = seconds - elapsedSeconds;
-                int min = remainingSeconds / 60;
-                int sec = remainingSeconds % 60;
+        int taskid = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (int i = seconds; i >= 0; i--) {
+                    int elapsedSeconds = seconds - i;
+                    int remainingSeconds = seconds - elapsedSeconds;
+                    int min = remainingSeconds / 60;
+                    int sec = remainingSeconds % 60;
 
-                // if sec = 9, add a 0 in front of it
-                if (sec < 10) {
-                    bossBar.setTitle(title + " §8| §bTime:§r " + min + ":0" + sec);
-                } else {
-                    bossBar.setTitle(title + " §8| §bTime:§r " + min + ":" + sec);
+                    String timeString = (sec < 10) ? min + ":0" + sec : min + ":" + sec;
+                    bossBar.setTitle(title + " §8| §bTime:§r " + timeString);
+
+                    bossBar.setProgress((double) remainingSeconds / seconds);
+
+                    if (remainingSeconds >= 1200) {
+                        bossBar.setColor(BarColor.BLUE);
+                        bossBar.setStyle(BarStyle.SEGMENTED_12);
+                    } else if (remainingSeconds >= 600) {
+                        bossBar.setColor(BarColor.PURPLE);
+                        bossBar.setStyle(BarStyle.SEGMENTED_10);
+                    } else if (remainingSeconds >= 300) {
+                        bossBar.setColor(BarColor.PINK);
+                        bossBar.setStyle(BarStyle.SEGMENTED_6);
+                    } else {
+                        bossBar.setColor(BarColor.GREEN);
+                        bossBar.setStyle(BarStyle.SOLID);
+                    }
+
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        bossBar.addPlayer(p);
+                    }
+
+                    // check if the ritual is still active
+                    if (!ItemManager.getRitualActive()) {
+                        bossBar.removeAll();
+                        cancel();
+                        return;
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        logger.error("Interrupted exception", e);
+                    }
                 }
 
-                double progress = (double) remainingSeconds / seconds;
-                bossBar.setProgress(progress);
+                Title titler = Title.title(
+                        Component.text("§5§l§nRitual§r §4§l§nFinished"),
+                        Component.text(title)
+                );
 
-
-                // 100% -> 66%  30m -> 20m | Blue
-                if (remainingSeconds >= 1200) {
-                    bossBar.setColor(BarColor.BLUE);
-                    bossBar.setStyle(BarStyle.SEGMENTED_12);
-                    // 66% -> 33%  20m -> 10m | Purple
-                } else if (remainingSeconds >= 600) {
-                    bossBar.setColor(BarColor.PURPLE);
-                    bossBar.setStyle(BarStyle.SEGMENTED_10);
-                    // 33% -> 66%  10m -> 5m | Pink
-                } else if (remainingSeconds >= 300) {
-                    bossBar.setColor(BarColor.PINK);
-                    bossBar.setStyle(BarStyle.SEGMENTED_6);
-                    // 16% -> 0%  5m -> 0m | Green
-                } else {
-                    bossBar.setColor(BarColor.GREEN);
-                    bossBar.setStyle(BarStyle.SOLID);
-                }
-
+                bossBar.removeAll();
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    bossBar.addPlayer(p);
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    logger.error("Interrupted exception", e);
+                    p.showTitle(titler);
+                    p.playSound(p.getLocation(), "minecraft:ui.toast.challenge_complete", 0.1f, 1);
                 }
             }
+        }.runTaskAsynchronously(CUU.getInstance()).getTaskId();
 
-            // remove bossbar after countdown is done
-            bossBar.removeAll();
-            ItemManager.setRitualActive(false);
-            // play complete sound
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.playSound(p.getLocation(), "minecraft:ui.toast.challenge_complete", 0.1f, 1);
-            }
-        });
     }
 
-    public static void removeBossbars(){
+    public static void cancelDsword(){
         bossBar.removeAll();
         ItemManager.setRitualActive(false);
+        replaceBlocks(findBottomPodium(Bukkit.getWorld("world_the_end")), Material.END_PORTAL);
     }
-
 
 }

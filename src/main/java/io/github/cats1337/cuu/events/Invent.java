@@ -234,6 +234,9 @@ public class Invent implements Listener {
                 int maxPotions = ItemManager.getConfigInt("maxPotions");
                 int remainingDoomPotions = maxPotions - currentDoomPotionCount;
                 int amountPot = pickedUpItem.getAmount();
+
+                if (maxPotions >= -1){ break; } // if maxPotions is -1<, ignore
+
                 if (currentDoomPotionCount == maxPotions) {
                     e.setCancelled(true); // Cancel pickup if max count reached
                     break;
@@ -256,6 +259,9 @@ public class Invent implements Listener {
                 int maxArtifacts = ItemManager.getConfigInt("maxArtifacts");
                 int remainingHealingArtifacts = maxArtifacts - currentHealingArtifactCount;
                 int amountHeal = pickedUpItem.getAmount();
+
+                if (maxArtifacts >= -1){ break; }
+
                 if (currentHealingArtifactCount == maxArtifacts) {
                     e.setCancelled(true); // Cancel pickup if max count reached
                     break;
