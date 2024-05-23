@@ -59,7 +59,7 @@ public class Passive {
     }
 
     // returnPassvieEffects (Player p)
-    // give player all passive effects they have, but don't because they drank milk...
+    // give player all passive effects they have, but don't because they drank milk...?
 
     public static void returnPassiveEffects(Player p){
         if( p != null){

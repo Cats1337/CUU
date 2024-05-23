@@ -22,7 +22,7 @@ import java.util.List;
 
 @Command(name = "CUU")
 public class UtilCommands implements ICommand {
-    private final List<String> subCommands = List.of("help", "set", "check", "list", "remove", "cancel");
+    private final List<String> subCommands = List.of("help", "set", "check", "list", "remove", "reset", "cancel");
 
     String help = "\n &9&lCats &5&lUberItems &b&lUtils &e&l" + Tiny.of("commands\n" ) +
             " &b/cuu help &7- &fDisplay this message\n" +
@@ -32,6 +32,7 @@ public class UtilCommands implements ICommand {
             " &b/cuu list &7- &fList all items and their owners\n" +
             " &b/cuu list <player> &7- &fList all items owned by a player\n" +
             " &b/cuu remove owner <itemName> &7- &fRemove the owner of an item\n" +
+            " &b/cuu reset <itemName> &7- &fRemove owner, set exists/crafted to false for an item\n" +
             " &b/cuu cancel &7- &fCancel any active ritual";
 
 
@@ -187,6 +188,22 @@ public class UtilCommands implements ICommand {
                 }
                 break;
 
+            case "reset":
+                // set specifed item to false
+                if (args.length < 2) {
+                    Text.of("§cUsage: /CUU reset <itemName>").send(sender);
+                } else {
+                    String itemName = args[1];
+                    String confName = NameCheck.convertToConfigName(itemName);
+                    String dispName = NameCheck.convertToDisplayName(itemName);
+                    ItemManager.setExists(confName, false);
+                    ItemManager.setCrafted(confName, false);
+                    ItemManager.removeItemOwner(confName);
+                    Text.of(prefix + "§4" + dispName + " §3reset").send(sender);
+                }
+            break;
+
+
             case "cancel":
                 if (ItemManager.getRitualActive()) {
                     Rituals.cancelRitual();
@@ -235,12 +252,10 @@ public class UtilCommands implements ICommand {
                 }
 
                 if (args[0].equalsIgnoreCase("list")) {
-                    List<String> completions = new ArrayList<>(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
-                    completions.add("owner");
-                    return ITabCompleterHelper.tabComplete(args[1], completions);
+                    return ITabCompleterHelper.tabComplete(args[1], List.of("owner"));
                 }
 
-                if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner")) {
+                if (args[0].equalsIgnoreCase("check") && args[1].equalsIgnoreCase("owner") || args[0].equalsIgnoreCase("reset")) {
                     return ITabCompleterHelper.tabComplete(args[1], Arrays.asList(items));
                 }
 

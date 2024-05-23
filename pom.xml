@@ -6,7 +6,7 @@
 
     <groupId>io.github.cats1337</groupId>
     <artifactId>CUU</artifactId>
-    <version>1.2</version>
+    <version>1.4</version>
     <packaging>jar</packaging>
 
     <name>CUU</name>

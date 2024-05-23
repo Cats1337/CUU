@@ -13,10 +13,16 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Rituals {
     private static final Logger logger = LogManager.getLogger(Rituals.class);
+    private static List<BukkitTask> tasks = new ArrayList<>();
+    static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
     public static void startRitual(Player p, String itemName, ItemStack itemUb) {
         Location locO = p.getLocation();
@@ -80,9 +86,9 @@ public class Rituals {
         itemStand.setArms(true);
         itemStand.setGravity(false);
         itemStand.setVisible(false);
-        itemStand.setCanPickupItems(false);
-        itemStand.setCustomNameVisible(false);
         itemStand.setItem(EquipmentSlot.HAND, itemUb);
+        itemStand.addEquipmentLock(EquipmentSlot.HAND, ArmorStand.LockType.ADDING_OR_CHANGING);
+        itemStand.setCustomNameVisible(false);
         itemStand.setRightArmPose(new EulerAngle(0, -1.5707963, -1.7765134));
 
         Component itemNameComponent = Component.text("§6§l" + itemName);
@@ -90,7 +96,7 @@ public class Rituals {
 
         final int[] remainingSeconds = {seconds};
 
-        int rotItemTaskId = new BukkitRunnable() {
+        BukkitTask rotItemTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (remainingSeconds[0] <= 10) {
@@ -114,11 +120,11 @@ public class Rituals {
                     itemStand.remove();
                     hologram.remove();
                 }
-
             }
-        }.runTaskTimer(CUU.getInstance(), 0L, 1L).getTaskId();
+        }.runTaskTimer(CUU.getInstance(), 0L, 1L);
+        tasks.add(rotItemTask);
 
-        int remainTimeTaskId = new BukkitRunnable() {
+        BukkitTask remainTimeTask = new BukkitRunnable() {
             @Override
             public void run() {
                 int min = remainingSeconds[0] / 60;
@@ -134,12 +140,11 @@ public class Rituals {
                 if (!ItemManager.getRitualActive()) {
                     cancel();
                 }
-
             }
+        }.runTaskTimer(CUU.getInstance(), 0L, 20L);
+        tasks.add(remainTimeTask);
 
-        }.runTaskTimer(CUU.getInstance(), 0L, 20L).getTaskId();
-
-        new BukkitRunnable() {
+        BukkitTask hologramRemovalTask = new BukkitRunnable() {
             @Override
             public void run() {
                 hologram.remove();
@@ -148,17 +153,13 @@ public class Rituals {
 
                 loc.getBlock().setType(Material.AIR);
 
-                Bukkit.getScheduler().cancelTask(remainTimeTaskId);
-                Bukkit.getScheduler().cancelTask(rotItemTaskId);
-
                 world.dropItemNaturally(loc, itemUb);
                 ItemManager.setExists(NameCheck.convertToConfigName(itemName), true);
                 ItemManager.setRitualActive(false);
             }
         }.runTaskLater(CUU.getInstance(), seconds * 20L);
+        tasks.add(hologramRemovalTask);
     }
-
-    static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
     public static void showBossBar(String title, int seconds) {
         bossBar.setTitle(title);
@@ -168,7 +169,7 @@ public class Rituals {
             p.playSound(p.getLocation(), "block.end_portal.spawn", 2F, .05F);
         }
 
-        int taskid = new BukkitRunnable() {
+        BukkitTask bossBarTask = new BukkitRunnable() {
             @Override
             public void run() {
                 for (int i = seconds; i >= 0; i--) {
@@ -179,16 +180,30 @@ public class Rituals {
 
                     String timeString = (sec < 10) ? min + ":0" + sec : min + ":" + sec;
                     bossBar.setTitle(title + " §8| §bTime:§r " + timeString);
-
                     bossBar.setProgress((double) remainingSeconds / seconds);
 
-                    if (remainingSeconds >= 1200) {
+                    // 30 minutes | 1800
+                    // 20 minutes | 1200 | aka 33%
+                    // 10 minutes | 600 | aka 66%
+                    // 5 minutes | 300 | aka 83%
+
+                    // if time remaining is 67% or more, color is blue
+                    // if time remaining is 33% or more, color is purple
+                    // if time remaining is 17% or more, color is pink
+                    // if time remaining is less than 17%, color is green
+
+                    // get 67% of the total time: seconds * 0.67
+                    // 1800 * 0.67 = 1206 ~20 minutes
+                    // 1800 * 0.33 = 594 ~10 minutes
+                    // 1800 * 0.17 = 306 ~5 minutes
+
+                    if (remainingSeconds >= seconds * 0.67) {
                         bossBar.setColor(BarColor.BLUE);
                         bossBar.setStyle(BarStyle.SEGMENTED_12);
-                    } else if (remainingSeconds >= 600) {
+                    } else if (remainingSeconds >= seconds * 0.33) {
                         bossBar.setColor(BarColor.PURPLE);
                         bossBar.setStyle(BarStyle.SEGMENTED_10);
-                    } else if (remainingSeconds >= 300) {
+                    } else if (remainingSeconds >= seconds * 0.17) {
                         bossBar.setColor(BarColor.PINK);
                         bossBar.setStyle(BarStyle.SEGMENTED_6);
                     } else {
@@ -224,11 +239,20 @@ public class Rituals {
                     p.playSound(p.getLocation(), "minecraft:ui.toast.challenge_complete", 0.1f, 1);
                 }
             }
-        }.runTaskAsynchronously(CUU.getInstance()).getTaskId();
+        }.runTaskAsynchronously(CUU.getInstance());
+        tasks.add(bossBarTask);
     }
 
     public static void cancelRitual() {
         bossBar.removeAll();
         ItemManager.setRitualActive(false);
+
+        for (BukkitTask task : tasks) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+
+        tasks.clear();
     }
 }

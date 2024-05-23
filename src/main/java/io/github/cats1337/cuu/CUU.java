@@ -5,6 +5,7 @@ import com.marcusslover.plus.lib.container.ContainerManager;
 import io.github.cats1337.cuu.commands.UtilCommands;
 import io.github.cats1337.cuu.events.*;
 import io.github.cats1337.cuu.items.*;
+import io.github.cats1337.cuu.utils.Rituals;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -67,8 +68,10 @@ public class CUU extends JavaPlugin {
     public void onDisable() {
         // posts exit message in chat
         getLogger().info(getDescription().getName() + " V: " + getDescription().getVersion() + " has been disabled");
-        // cancel all active tasks, if any
-        Bukkit.getScheduler().cancelTasks(this);
+
+        // Cancel tasks
+        DragonSword.cancelDsword();
+        Rituals.cancelRitual();
     }
 
     // NEW UBER ITEM CHECKLIST

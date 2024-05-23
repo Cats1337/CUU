@@ -6,10 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -26,48 +23,36 @@ import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import thirtyvirus.uber.UberItems;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DragonSword implements Listener {
 
     private static final Logger logger = LogManager.getLogger(DragonSword.class);
+    public static BukkitRunnable dsBossBar;
+    private static List<BukkitTask> tasks = new ArrayList<>();
 
     @EventHandler
     public void onDragonDeath(EntityDeathEvent e) {
-
-        // make sure the dragon is actually dead and not flying to podium
-        // check the phase of the dragon
-        // if the dragon is flying to the podium, wait
-        // if the dragon is dead, continue
-
         if (e.getEntityType() == EntityType.ENDER_DRAGON) {
             EnderDragon dragon = (EnderDragon) e.getEntity();
-
             World world = dragon.getWorld();
             DragonBattle dragonBattle = world.getEnderDragonBattle();
 
-            if (dragonBattle != null) {
-                if (!ItemManager.getExists("DOOM_SWORD")) {
-                    dragonBattle.generateEndPortal(false);
-//                    Location loc = dragonBattle.getEndPortalLocation();
-                    Location btmPod = findBottomPodium(world);
-                    spawnPodium(btmPod);
-                    assert btmPod != null;
-                    replaceBlocks(btmPod, Material.RED_STAINED_GLASS);
-                    ItemManager.setRitualActive(true);
-                }
+            if (dragonBattle != null && !ItemManager.getExists("DOOM_SWORD")) {
+                dragonBattle.generateEndPortal(false);
+                Location btmPod = findBottomPodium(world);
+                spawnPodium(btmPod);
+                assert btmPod != null;
+                replaceBlocks(btmPod, Material.RED_STAINED_GLASS);
+                ItemManager.setRitualActive(true);
             }
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH) // Highest priority, meaning it will be called first
-    public void onPortalCreateEvent(PortalCreateEvent e) {
-        if(e.getEntity() instanceof EnderDragon && e.getEntity().getWorld().getName().equals("world_the_end")){
-            e.setCancelled(true);
-        }
-    }
-
-    // on dragon spawn for the first time
     @EventHandler
     public void onDragonSpawn(EntitySpawnEvent e) {
         if (e.getEntityType() == EntityType.ENDER_DRAGON) {
@@ -75,81 +60,70 @@ public class DragonSword implements Listener {
             World world = dragon.getWorld();
             DragonBattle dragonBattle = world.getEnderDragonBattle();
 
-            // check if the dragon has been killed before
-            if (dragonBattle != null) {
-                if (!ItemManager.getExists("DOOM_SWORD")) {
-                    Title titler = Title.title(
-                            Component.text("§5§l§nRitual§r §a§l§nStarted"), // Main title
-                            Component.text("§6§lDoom Sword" + "§8 in §d§nThe End") // Subtitle
-                    );
-                    // show title to players
-                    Bukkit.getOnlinePlayers().forEach(p -> p.showTitle(titler));
-                    dragonBattle.generateEndPortal(false);
-                }
+            if (dragonBattle != null && !ItemManager.getExists("DOOM_SWORD")) {
+                Title titler = Title.title(
+                        Component.text("§5§l§nRitual§r §a§l§nStarted"),
+                        Component.text("§6§lDoom Sword" + "§8 in §d§nThe End")
+                );
+                Bukkit.getOnlinePlayers().forEach(p -> p.showTitle(titler));
+                dragonBattle.generateEndPortal(false);
             }
         }
     }
 
     public static void spawnPodium(Location loc) {
-        if (loc == null) { return; }
-        replaceBlocks(loc, Material.RED_STAINED_GLASS);
-        // Wait 180 ticks before attempting to replace the end portal blocks
-        Bukkit.getScheduler().runTaskLater(CUU.getInstance(), () -> {
-            // Start trying to replace end portal blocks with red stained glass
-            int taskid = Bukkit.getScheduler().runTaskTimer(CUU.getInstance(), () ->
-                    replaceBlocks(loc, Material.RED_STAINED_GLASS), 0L, 1L).getTaskId();
+        if (loc == null) {
+            return;
+        }
+        BukkitTask spWait = new BukkitRunnable() {
+            @Override
+            public void run() {
+                BukkitTask predsr = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        replaceBlocks(loc, Material.RED_STAINED_GLASS);
+                    }
+                }.runTaskTimer(CUU.getInstance(), 0L, 1L);
+                tasks.add(predsr);
 
-            // Cancel the task after 25 ticks or until successful
-            Bukkit.getScheduler().runTaskLater(CUU.getInstance(), () -> {
-                Bukkit.getScheduler().cancelTask(taskid);
-                // create dragon sword item
-                Location loc2 = loc.clone().add(0, 6, 0);
+                BukkitTask dsrHandler = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        predsr.cancel();
+                        tasks.remove(predsr); // Remove the task from the list, since it's no longer running
+                        Location loc2 = loc.clone().add(0, 6, 0);
 
-                if(!ItemManager.getExists("DOOM_SWORD")) {
+                        if (!ItemManager.getExists("DOOM_SWORD")) {
+                            ItemStack itemU = UberItems.getItem("doom_sword").makeItem(1);
+                            loc.getWorld().dropItemNaturally(loc2, itemU);
 
-                    ItemStack itemU = UberItems.getItem("doom_sword").makeItem(1);
-                    loc.getWorld().dropItemNaturally(loc2, itemU);
+                            Title titler = Title.title(
+                                    Component.text("§5§l§nRitual§r §4§l§nFinished"),
+                                    Component.text("§6§lDoom Sword" + "§8 in §d§nThe End")
+                            );
 
-                    Title titler = Title.title(
-                            Component.text("§5§l§nRitual§r §4§l§nFinished"), // Main title
-                            Component.text("§6§lDoom Sword" + "§8 in §d§nThe End") // Subtitle
-                    );
+                            showBossBar("§6§lDoom Sword", ItemManager.getRitualTime("dragon"));
+                            ItemManager.setExists("DOOM_SWORD", true);
+                            ItemManager.setRitualActive(true);
 
-                    showBossBar("§6§lDoom Sword", 900); // 15 minutes = 1800 seconds
-                    ItemManager.setExists("DOOM_SWORD", true);
-                    ItemManager.setRitualActive(true);
+                            Bukkit.getOnlinePlayers().forEach(p -> p.showTitle(titler));
+                        }
+                    }
+                }.runTaskLater(CUU.getInstance(), 35L);
+                tasks.add(dsrHandler);
+            }
+        }.runTaskLater(CUU.getInstance(), 180L);
+        tasks.add(spWait);
 
-                    // show title to players
-                    Bukkit.getOnlinePlayers().forEach(p -> p.showTitle(titler));
-                }
-            }, 35L);
-        }, 180L);
-
-        // wait 15 minutes before replacing the blocks back to end portal
-        int taskid = new BukkitRunnable() {
+        BukkitTask rbTimer = new BukkitRunnable() {
             @Override
             public void run() {
                 replaceBlocks(loc, Material.END_PORTAL);
             }
-        }.runTaskLater(CUU.getInstance(), ItemManager.getRitualTime("dragon") * 20L).getTaskId();
-
-        // If the ritual is no longer active, cancel the task, and replace the blocks back to end portal
-        if (!ItemManager.getRitualActive()) {
-            Bukkit.getScheduler().cancelTask(taskid);
-            replaceBlocks(loc, Material.END_PORTAL);
-        }
-
+        }.runTaskLater(CUU.getInstance(), ItemManager.getRitualTime("dragon") * 20L);
+        tasks.add(rbTimer);
     }
 
-    // Looking at podium from top down
-    // X = bedrock, 0 = air/portal
-    // X 0 0 0 X
-    // 0 0 0 0 0
-    // 0 0 X 0 0
-    // 0 0 0 0 0
-    // X 0 0 0 X
-
-    // replace blocks in a 2x2 area. replaceBlocks(Location loc, Material toReplace, Material replaceWith)
     public static void replaceBlocks(Location loc, Material replaceWith) {
         World world = loc.getWorld();
         int x = loc.getBlockX();
@@ -166,18 +140,12 @@ public class DragonSword implements Listener {
         }
     }
 
-    // iterate through all y values and find the lowest bedrock block of the end portal
-    // portal is x: 0 y: ?? z: 0
-    // start from bottom and go up
-    // find bottomPodium ~ 64?
     public static Location findBottomPodium(World world) {
-        // get very bottom bedrock block at x: 0, z: 0
-
         for (int i = 0; i < 256; i++) {
             Block block = world.getBlockAt(0, i, 0);
             if (block.getType() == Material.BEDROCK) {
                 Location loc = new Location(world, 0, i, 0);
-                loc.add(0, 1, 0); // add 1 to y so it's the portal level
+                loc.add(0, 1, 0);
                 return loc;
             }
         }
@@ -185,6 +153,7 @@ public class DragonSword implements Listener {
     }
 
     static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
+
     public static void showBossBar(String title, int seconds) {
         bossBar.setTitle(title);
 
@@ -193,7 +162,7 @@ public class DragonSword implements Listener {
             p.playSound(p.getLocation(), "block.end_portal.spawn", 2F, .05F);
         }
 
-        int taskid = new BukkitRunnable() {
+        dsBossBar = new BukkitRunnable() {
             @Override
             public void run() {
                 for (int i = seconds; i >= 0; i--) {
@@ -204,16 +173,30 @@ public class DragonSword implements Listener {
 
                     String timeString = (sec < 10) ? min + ":0" + sec : min + ":" + sec;
                     bossBar.setTitle(title + " §8| §bTime:§r " + timeString);
-
                     bossBar.setProgress((double) remainingSeconds / seconds);
 
-                    if (remainingSeconds >= 1200) {
+                    // 15 minutes | 900 | 100%
+                    // 10 minutes | 600 | aka 33%
+                    // 5 minutes | 300 | aka 66%
+                    // 2 minutes | 120 | aka 83%
+
+                    // if time remaining is 67% or more, color is blue
+                    // if time remaining is 33% or more, color is purple
+                    // if time remaining is 17% or more, color is pink
+                    // if time remaining is less than 17%, color is green
+
+                    // get 67% of the total time: seconds * 0.67
+                    // 900 * 0.67 = 603 ~10 minutes
+                    // 900 * 0.33 = 297 ~5 minutes
+                    // 900 * 0.17 = 153 ~2 minutes
+
+                    if (remainingSeconds >= seconds * 0.67) {
                         bossBar.setColor(BarColor.BLUE);
                         bossBar.setStyle(BarStyle.SEGMENTED_12);
-                    } else if (remainingSeconds >= 600) {
+                    } else if (remainingSeconds >= seconds * 0.33) {
                         bossBar.setColor(BarColor.PURPLE);
                         bossBar.setStyle(BarStyle.SEGMENTED_10);
-                    } else if (remainingSeconds >= 300) {
+                    } else if (remainingSeconds >= seconds * 0.17) {
                         bossBar.setColor(BarColor.PINK);
                         bossBar.setStyle(BarStyle.SEGMENTED_6);
                     } else {
@@ -225,7 +208,6 @@ public class DragonSword implements Listener {
                         bossBar.addPlayer(p);
                     }
 
-                    // check if the ritual is still active
                     if (!ItemManager.getRitualActive()) {
                         bossBar.removeAll();
                         cancel();
@@ -250,14 +232,29 @@ public class DragonSword implements Listener {
                     p.playSound(p.getLocation(), "minecraft:ui.toast.challenge_complete", 0.1f, 1);
                 }
             }
-        }.runTaskAsynchronously(CUU.getInstance()).getTaskId();
+        };
 
+        dsBossBar.runTaskAsynchronously(CUU.getInstance());
     }
 
-    public static void cancelDsword(){
+    public static void cancelDsword() {
         bossBar.removeAll();
         ItemManager.setRitualActive(false);
         replaceBlocks(findBottomPodium(Bukkit.getWorld("world_the_end")), Material.END_PORTAL);
-    }
 
+        // Cancel BukkitRunnable
+        if (dsBossBar != null) {
+            dsBossBar.cancel();
+        }
+
+        // Cancel BukkitTasks
+        for (BukkitTask task : tasks) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+
+        // Clear the list
+        tasks.clear();
+    }
 }
