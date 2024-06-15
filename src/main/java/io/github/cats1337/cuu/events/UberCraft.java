@@ -87,6 +87,12 @@ public class UberCraft implements Listener {
                         assert itemMat != null;
                         p.getInventory().removeItem(itemMat);
                         p.closeInventory();
+
+                        if (p.getLocation().getY() > 170) {
+                            Text.of("§cYou must be below Y=170 to perform a ritual!").send(p);
+                            return;
+                        }
+
                         Rituals.startRitual(p, item, itemMat);
                         ItemManager.setCrafted(NameCheck.convertToConfigName(item), true);
                     }, 1L);

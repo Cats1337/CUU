@@ -9,6 +9,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import thirtyvirus.uber.UberItem;
@@ -18,23 +19,22 @@ import thirtyvirus.uber.helpers.UberRarity;
 
 import java.util.List;
 
-public class doom_crown extends UberItem {
-//            Netherite Helmet - Curse Of Binding, Protection 5, Unbreakable, Mending, Aqua Affinity and Respiration 3
-//            While wearing grants the player 6 extra hearts
-//            Only one of these can be crafted between all of the players (Command to allow it to be crafted again incase it is destroyed)
-//            Once crafted takes 30 minutes to drop from the location it was crafted (Text with Countdown and location displayed as a Boss Health Bar)
-//            Once picked up is equiped immediately swapping with current armor player is wearing
-    public doom_crown(Material material, String name, UberRarity rarity, boolean stackable, boolean oneTimeUse, boolean hasActiveEffect, List<UberAbility> abilities, UberCraftingRecipe craftingRecipe) {
+public class doom_shield extends UberItem {
+// Shield (Unbreakable)
+// Only one of these can be crafted between all of the players
+// Once crafted takes 30 minutes to drop from the location it was crafted (Text with Countdown and location displayed as a Boss Health Bar)
+
+// When Shield is broken by an axe there is a 10% chance that the attacker is launched into the sky (30 blocks)
+    public doom_shield(Material material, String name, UberRarity rarity, boolean stackable, boolean oneTimeUse, boolean hasActiveEffect, List<UberAbility> abilities, UberCraftingRecipe craftingRecipe) {
         super(material, name, rarity, stackable, oneTimeUse, hasActiveEffect, abilities, craftingRecipe);
     }
     public void onItemStackCreate(ItemStack item) {
-        item.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
-        item.addUnsafeEnchantment(Enchantment.OXYGEN, 3);
-        item.addUnsafeEnchantment(Enchantment.WATER_WORKER, 1);
-        item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
+        // 10% to launch attacker into the sky (30 blocks) when shield is broken by an axe
+
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
         item.setItemMeta(meta);
+//        add Tag "doom_bow" to item
     }
     public void getSpecificLorePrefix(List<String> lore, ItemStack item) { }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
@@ -50,5 +50,6 @@ public class doom_crown extends UberItem {
     public boolean hitEntityAction(Player player, EntityDamageByEntityEvent event, Entity target, ItemStack item) { return false; }
     public boolean breakBlockAction(Player player, BlockBreakEvent event, Block block, ItemStack item) { return false; }
     public boolean clickedInInventoryAction(Player player, InventoryClickEvent event, ItemStack item, ItemStack addition) { return false; }
-    public boolean activeEffect(Player player, ItemStack item) { return false; }
+    public boolean activeEffect(Player player, ItemStack item) {return false; }
 }
+

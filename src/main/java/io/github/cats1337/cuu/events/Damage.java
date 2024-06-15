@@ -8,6 +8,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
 
 public class Damage implements Listener {
 
@@ -29,5 +33,14 @@ public class Damage implements Listener {
             p.setHealth(Math.min(p.getHealth() + steal, p.getMaxHealth()));
         }
 
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent e) {
+
+        if (e.getEntity().getScoreboardTags().contains("DOOM_MOB")) {
+            List<ItemStack> item = e.getDrops();
+            item.clear();
+        }
     }
 }

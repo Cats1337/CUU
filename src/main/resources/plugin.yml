@@ -7,3 +7,22 @@ description: Cats UberItems Utilities. Plugin commissioned by linktr.ee/xetho__
 website: https://cats1337.github.io
 depend:
   - UberItems
+permissions:
+  cuu.help:
+    description: Allows user to view help
+    default: true
+  cuu.set:
+    description: Allows user to set item information
+    default: op
+  cuu.get:
+    description: Allows user to get item information
+    default: op
+  cuu.check:
+    description: Allows user to check item information
+    default: op
+  cuu.cancel:
+    description: Allows user to cancel rituals
+    default: op
+  cuu.remove:
+    description: Allows user to remove item information
+    default: op

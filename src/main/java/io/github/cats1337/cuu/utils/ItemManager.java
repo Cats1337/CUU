@@ -1,12 +1,17 @@
 package io.github.cats1337.cuu.utils;
 
 import io.github.cats1337.cuu.CUU;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class ItemManager {
@@ -20,7 +25,8 @@ public class ItemManager {
     private static final ItemStack[] bowItems = new ItemStack[]{ new ItemStack(Material.ECHO_SHARD, 4), new ItemStack(Material.ENDER_EYE, 2), new ItemStack(Material.END_CRYSTAL, 2), new ItemStack(Material.BOW, 1) };
     private static final ItemStack[] axeItems = new ItemStack[]{ new ItemStack(Material.WITHER_ROSE, 4), new ItemStack(Material.WITHER_SKELETON_SKULL, 4), new ItemStack(Material.NETHERITE_AXE, 1) };
     private static final ItemStack[] pickItems = new ItemStack[]{ new ItemStack(Material.GUNPOWDER, 128), new ItemStack(Material.SUGAR, 128), new ItemStack(Material.SCULK_CATALYST, 4), new ItemStack(Material.NETHERITE_PICKAXE, 1) };
-
+    // Shield
+    // Staff
 
     // return recipe items
     public static void refundMats(String itemName, Player p) {
@@ -205,4 +211,5 @@ public class ItemManager {
     public static int getConfigInt(String var){
         return (config.getInt("variables." + var));
     }
+
 }

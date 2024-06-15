@@ -34,6 +34,7 @@ variables:
   lifesteal: 15 # 15%
   ritualActive: false
   ritualTime: 30 # minutes
-  dragonRitualTime: 2 # minutes
+  dragonRitualTime: 15 # minutes
   maxPotions: 2 # -1 = infinite
   maxArtifacts: 16 # -1 = infinite
+  doombowCooldown: 20 # seconds

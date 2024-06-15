@@ -1,5 +1,6 @@
 package io.github.cats1337.cuu.items;
 
+import io.github.cats1337.cuu.utils.ItemManager;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
@@ -9,6 +10,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import thirtyvirus.uber.UberItem;
@@ -16,14 +18,17 @@ import thirtyvirus.uber.helpers.UberAbility;
 import thirtyvirus.uber.helpers.UberCraftingRecipe;
 import thirtyvirus.uber.helpers.UberRarity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class doom_bow extends UberItem {
-    //            Netherite Helmet - Curse Of Binding, Protection 5, Unbreakable, Mending, Aqua Affinity and Respiration 3
-//            While wearing grants the player 6 extra hearts
-//            Only one of these can be crafted between all of the players (Command to allow it to be crafted again incase it is destroyed)
-//            Once crafted takes 30 minutes to drop from the location it was crafted (Text with Countdown and location displayed as a Boss Health Bar)
-//            Once picked up is equiped immediately swapping with current armor player is wearing
+// Bow - Power 15, Unbreakable, Mending, Infinity, Flame
+// Only one of these can be crafted between all of the players (Command to allow it to be crafted again incase it is destroyed)
+// Once crafted takes 30 minutes to drop from the location it was crafted (Text with Countdown and location displayed as a Boss Health Bar)
+// ~~30 Second Cooldown per shot, gives slowness 4 for 5 seconds after firing~~
+
+    // 20 Second Cooldown per shot, gives slowness 4 for 10 seconds after firing
+// Pierces Shields and Inflicts Wither 3 for 6 Seconds and Poison 3 for 6 Seconds
     public doom_bow(Material material, String name, UberRarity rarity, boolean stackable, boolean oneTimeUse, boolean hasActiveEffect, List<UberAbility> abilities, UberCraftingRecipe craftingRecipe) {
         super(material, name, rarity, stackable, oneTimeUse, hasActiveEffect, abilities, craftingRecipe);
     }
@@ -31,6 +36,7 @@ public class doom_bow extends UberItem {
         item.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 15);
         item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
         item.addUnsafeEnchantment(Enchantment.ARROW_FIRE, 1);
+
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
         item.setItemMeta(meta);

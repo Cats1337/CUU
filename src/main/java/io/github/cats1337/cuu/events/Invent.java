@@ -26,28 +26,29 @@ public class Invent implements Listener {
     private void inventoryClose(InventoryCloseEvent e) {
         Player p = (Player) e.getPlayer();
 
-
-
         // Check inventory for 'Healing Artifact' and 'Doom Potion' items
-        // make sure the player only has 16 Healing Artifacts and 2 Doom Potions max. drop excess items
+        // Ensure the player only has 16 Healing Artifacts and 2 Doom Potions max, drop excess items
         for (Map.Entry<String, Integer> entry : NameCheck.extractInvNameCount(p).entrySet()) {
             String itemName = entry.getKey();
             int itemCount = entry.getValue();
 
-            if (itemName.equals("Healing Artifact") && itemCount > 16) {
+            if ("Healing Artifact".equals(itemName) && itemCount > 16) {
                 int excessAmount = itemCount - 16;
                 removeExcessItems(p, itemName, excessAmount);
             }
 
-            if (itemName.equals("Doom Potion") && itemCount > 2) {
+            if ("Doom Potion".equals(itemName) && itemCount > 2) {
                 int excessAmount = itemCount - 2;
                 removeExcessItems(p, itemName, excessAmount);
             }
         }
 
-//        --------={ Passive Effects }=--------
+        // --------={ Passive Effects }=--------
 
-        if(!ItemManager.checkOwnItem(p)) { return; } // if player doesn't own any items, ignore
+        // If player doesn't own any items, ignore
+        if (!ItemManager.checkOwnItem(p)) {
+            return;
+        }
 
         String[] ownedItems = ItemManager.getOwnedItems(p);
 
@@ -57,9 +58,11 @@ public class Invent implements Listener {
                 .toArray(String[]::new);
 
         // If player doesn't own any items, ignore
-        if (ownedItems.length == 0) { return; }
+        if (ownedItems.length == 0) {
+            return;
+        }
 
-        // get contents of player's inventory, removing any null values
+        // Get contents of player's inventory, removing any null values
         ItemStack[] contents = Arrays.stream(p.getInventory().getContents())
                 .filter(Objects::nonNull)
                 .toArray(ItemStack[]::new);
@@ -72,19 +75,15 @@ public class Invent implements Listener {
 
         // Iterate through owned items and check if they are not in the inventory
         for (String itemName : itemNames) {
-            boolean found = false;
-            for (String inventoryItemName : itemNamesInInventory) {
-                if (itemName.equals(inventoryItemName)) {
-                    Passive.givePassiveEffect(p, itemName);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            boolean found = Arrays.stream(itemNamesInInventory).anyMatch(inventoryItemName -> itemName.equals(inventoryItemName));
+            if (found) {
+                Passive.givePassiveEffect(p, itemName);
+            } else {
                 Passive.removePassiveEffect(p, itemName);
             }
         }
     }
+
 
     // Method to remove excess items from the player's inventory
     private void removeExcessItems(Player p, String itemName, int excessAmount) {
@@ -137,14 +136,14 @@ public class Invent implements Listener {
         if (item == null || !NameCheck.checkName(item)) { return; }
 
         if(
-                e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
-                        e.getAction() == InventoryAction.PLACE_ALL ||
-                        e.getAction() == InventoryAction.PLACE_ONE ||
-                        e.getAction() == InventoryAction.PICKUP_HALF ||
-                        e.getAction() == InventoryAction.PICKUP_ONE ||
-                        e.getAction() == InventoryAction.PICKUP_ALL ||
-                        e.getAction() == InventoryAction.HOTBAR_SWAP ||
-                        e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+            e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
+            e.getAction() == InventoryAction.PLACE_ALL ||
+            e.getAction() == InventoryAction.PLACE_ONE ||
+            e.getAction() == InventoryAction.PICKUP_HALF ||
+            e.getAction() == InventoryAction.PICKUP_ONE ||
+            e.getAction() == InventoryAction.PICKUP_ALL ||
+            e.getAction() == InventoryAction.HOTBAR_SWAP ||
+            e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
         ) {
             if(!p.getInventory().contains(item)) {
                 Passive.removePassiveEffect(p, NameCheck.extractItemName(item));
@@ -153,6 +152,18 @@ public class Invent implements Listener {
                 Passive.givePassiveEffect(p, NameCheck.extractItemName(item));
             }
         }
+
+//        // If doom item is placed in any sort of container, like chest, furnace, barrel, etc. delete the item and announce it
+//        if (e.getAction() == InventoryAction.PLACE_ALL || e.getAction() == InventoryAction.PLACE_ONE || e.getAction() == InventoryAction.PLACE_SOME) {
+//            if (NameCheck.checkName(item)) {
+//                e.setCancelled(true);
+//                p.sendMessage("§cYou cannot place Doom Items in containers!");
+//                p.getWorld().dropItem(p.getLocation(), item);
+////                e.setCurrentItem(null);
+//            }
+//        }
+
+
 
     }
 
@@ -302,5 +313,12 @@ public class Invent implements Listener {
 
         if (!NameCheck.checkName(item)) { return; }
         Passive.removePassiveEffect(p, NameCheck.extractItemName(item));
+
+        // check if item is in a hopper, if it is, delete it and create a new item with the same properties
+        if (e.getItemDrop().getLocation().getBlock().getType().name().contains("HOPPER")) {
+            e.getItemDrop().remove();
+            p.getWorld().dropItem(p.getLocation(), item);
+        }
+
     }
 }

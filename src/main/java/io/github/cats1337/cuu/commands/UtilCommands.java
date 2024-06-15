@@ -54,10 +54,18 @@ public class UtilCommands implements ICommand {
         String prefix = "§8§l[§9§lC§5§lU§b§lU§8§l] §3";
         switch (arg) {
             case "help":
+                if (!sender.hasPermission("cuu.help")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 Text.of(help).send(sender);
                 break;
 
             case "set":
+                if (!sender.hasPermission("cuu.set")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 if (args.length < 4) {
                     Text.of("§cUsage: /CUU set <exists/crafted/owner> <itemName> <value>").send(sender);
                     return false;
@@ -97,6 +105,10 @@ public class UtilCommands implements ICommand {
                 break;
 
             case "check":
+                if (!sender.hasPermission("cuu.check")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 if (args.length < 2) {
                     Text.of("§cUsage: /CUU check <player> or /CUU check owner <itemName>").send(sender);
                     return false;
@@ -138,6 +150,10 @@ public class UtilCommands implements ICommand {
                 break;
 
             case "list":
+                if (!sender.hasPermission("cuu.list")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 if (args.length > 1) {
                     String target = args[1];
                     if (target.equalsIgnoreCase("owner")) {
@@ -168,6 +184,10 @@ public class UtilCommands implements ICommand {
                 break;
 
             case "remove":
+                if (!sender.hasPermission("cuu.remove")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 if (args.length < 3) {
                     // /cuu remove bossbar
                     Text.of("§cUsage: /CUU remove <owner> <itemName>").send(sender);
@@ -189,6 +209,10 @@ public class UtilCommands implements ICommand {
                 break;
 
             case "reset":
+                if (!sender.hasPermission("cuu.reset")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 // set specifed item to false
                 if (args.length < 2) {
                     Text.of("§cUsage: /CUU reset <itemName>").send(sender);
@@ -205,6 +229,10 @@ public class UtilCommands implements ICommand {
 
 
             case "cancel":
+                if (!sender.hasPermission("cuu.cancel")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
                 if (ItemManager.getRitualActive()) {
                     Rituals.cancelRitual();
                     DragonSword.cancelDsword();

@@ -5,6 +5,7 @@ import com.marcusslover.plus.lib.container.ContainerManager;
 import io.github.cats1337.cuu.commands.UtilCommands;
 import io.github.cats1337.cuu.events.*;
 import io.github.cats1337.cuu.items.*;
+import io.github.cats1337.cuu.utils.ItemManager;
 import io.github.cats1337.cuu.utils.Rituals;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -25,6 +26,7 @@ import java.util.List;
 public class CUU extends JavaPlugin {
     private ContainerManager containerManager;
     private CommandManager cmdManager;
+    private Rituals rituals;
 
     public static CUU getInstance() {
         return CUU.getPlugin(CUU.class);
@@ -63,6 +65,8 @@ public class CUU extends JavaPlugin {
 
         containerManager = new ContainerManager();
         containerManager.init(this);
+
+        rituals = new Rituals();
     }
 
     public void onDisable() {
@@ -71,7 +75,9 @@ public class CUU extends JavaPlugin {
 
         // Cancel tasks
         DragonSword.cancelDsword();
-        Rituals.cancelRitual();
+        if (rituals != null) {
+            Rituals.cancelRitual();
+        }
     }
 
     // NEW UBER ITEM CHECKLIST
@@ -103,15 +109,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Crown", AbilityType.NONE, "Grants the player 6 extra hearts while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.SCULK_CATALYST),
+                        new ItemStack(Material.SCULK_CATALYST, 16),
                         new ItemStack(Material.ENCHANTED_GOLDEN_APPLE),
-                        new ItemStack(Material.SCULK_CATALYST),
-                        new ItemStack(Material.MUSIC_DISC_OTHERSIDE),
+                        new ItemStack(Material.SCULK_CATALYST, 16),
+                        new ItemStack(Material.MUSIC_DISC_RELIC),
                         new ItemStack(Material.NETHERITE_HELMET),
                         new ItemStack(Material.MUSIC_DISC_OTHERSIDE),
-                        new ItemStack(Material.SCULK_CATALYST),
+                        new ItemStack(Material.SCULK_CATALYST, 16),
                         new ItemStack(Material.ENCHANTED_GOLDEN_APPLE),
-                        new ItemStack(Material.SCULK_CATALYST)
+                        new ItemStack(Material.SCULK_CATALYST, 16)
                 ), false, 1)));
 
 //       Doom Chestplate
@@ -119,15 +125,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Chestplate", AbilityType.NONE, "Grants the player strength 2 while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.SHULKER_SHELL),
-                        new ItemStack(Material.END_CRYSTAL),
-                        new ItemStack(Material.SHULKER_SHELL),
-                        new ItemStack(Material.DRAGON_BREATH),
+                        new ItemStack(Material.SHULKER_SHELL, 4),
+                        new ItemStack(Material.END_CRYSTAL, 4),
+                        new ItemStack(Material.SHULKER_SHELL, 4),
+                        new ItemStack(Material.DRAGON_BREATH, 4),
                         new ItemStack(Material.NETHERITE_CHESTPLATE),
-                        new ItemStack(Material.DRAGON_BREATH),
-                        new ItemStack(Material.SHULKER_SHELL),
-                        new ItemStack(Material.END_CRYSTAL),
-                        new ItemStack(Material.SHULKER_SHELL)
+                        new ItemStack(Material.DRAGON_BREATH, 4),
+                        new ItemStack(Material.SHULKER_SHELL, 4),
+                        new ItemStack(Material.END_CRYSTAL, 4),
+                        new ItemStack(Material.SHULKER_SHELL, 4)
                 ), false, 1)));
 
 //        Doom Leggings
@@ -135,15 +141,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Leggings", AbilityType.NONE, "Grants the player fire resistance 1 while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.MAGMA_CREAM),
+                        new ItemStack(Material.MAGMA_CREAM, 16),
                         new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
-                        new ItemStack(Material.MAGMA_CREAM),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
+                        new ItemStack(Material.MAGMA_CREAM, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 2),
                         new ItemStack(Material.NETHERITE_LEGGINGS),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
-                        new ItemStack(Material.MAGMA_CREAM),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 2),
+                        new ItemStack(Material.MAGMA_CREAM, 16),
                         new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
-                        new ItemStack(Material.MAGMA_CREAM)
+                        new ItemStack(Material.MAGMA_CREAM, 16)
                 ), false, 1)));
 
 //        Doom Boots
@@ -170,17 +176,17 @@ public class CUU extends JavaPlugin {
 //        Doom Bow
         UberItems.putItem("doom_bow", new doom_bow(Material.BOW, "Doom Bow", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Bow", AbilityType.NONE, "30 Second Cooldown per shot, gives slowness 4 for 5 seconds after firing")),
+                        new UberAbility("Doom Bow", AbilityType.NONE, (ItemManager.getConfigInt("doombowCooldown")) +" Second Cooldown per shot, gives slowness 4 for 10 seconds after firing")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.ECHO_SHARD),
-                        new ItemStack(Material.ENDER_EYE),
-                        new ItemStack(Material.ECHO_SHARD),
-                        new ItemStack(Material.END_CRYSTAL),
+                        new ItemStack(Material.ECHO_SHARD, 4),
+                        new ItemStack(Material.ENDER_EYE, 4),
+                        new ItemStack(Material.ECHO_SHARD, 4),
+                        new ItemStack(Material.END_CRYSTAL,4 ),
                         new ItemStack(Material.BOW),
-                        new ItemStack(Material.END_CRYSTAL),
-                        new ItemStack(Material.ECHO_SHARD),
-                        new ItemStack(Material.ENDER_EYE),
-                        new ItemStack(Material.ECHO_SHARD)
+                        new ItemStack(Material.END_CRYSTAL,4 ),
+                        new ItemStack(Material.ECHO_SHARD,4 ),
+                        new ItemStack(Material.ENDER_EYE, 4),
+                        new ItemStack(Material.ECHO_SHARD, 4)
                 ), false, 1)));
 
 //        Doom Axe
@@ -188,15 +194,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Axe", AbilityType.NONE, "Steals 50% of health from damage dealt")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.WITHER_ROSE),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
-                        new ItemStack(Material.WITHER_ROSE),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
                         new ItemStack(Material.NETHERITE_AXE),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
-                        new ItemStack(Material.WITHER_ROSE),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL),
-                        new ItemStack(Material.WITHER_ROSE)
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16)
                 ), false, 1)));
 
 //        Doom Pickaxe
@@ -204,15 +210,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Pickaxe", AbilityType.NONE, "Grants the player haste 2 while in inventory")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.SCULK_CATALYST),
+                        new ItemStack(Material.SCULK_CATALYST, 64),
                         new ItemStack(Material.GUNPOWDER, 64),
-                        new ItemStack(Material.SCULK_CATALYST),
+                        new ItemStack(Material.SCULK_CATALYST, 64),
                         new ItemStack(Material.SUGAR, 64),
                         new ItemStack(Material.NETHERITE_PICKAXE),
                         new ItemStack(Material.SUGAR, 64),
-                        new ItemStack(Material.SCULK_CATALYST),
+                        new ItemStack(Material.SCULK_CATALYST, 64),
                         new ItemStack(Material.GUNPOWDER, 64),
-                        new ItemStack(Material.SCULK_CATALYST)
+                        new ItemStack(Material.SCULK_CATALYST, 64)
                 ), false, 1)));
 
 //        Doom Potion
@@ -220,15 +226,15 @@ public class CUU extends JavaPlugin {
                 List.of(
                         new UberAbility("Doom Potion", AbilityType.NONE, "Fire Resistance for 10 Minutes, Strength 2 for 1 Minute, Speed 1 for 10 Minutes, Regeneration 1 for 30 Seconds")),
                 new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.MAGMA_CREAM),
+                        new ItemStack(Material.MAGMA_CREAM, 16),
                         new ItemStack(Material.NETHERITE_INGOT),
-                        new ItemStack(Material.BLAZE_POWDER),
-                        new ItemStack(Material.NETHER_WART),
+                        new ItemStack(Material.BLAZE_POWDER, 16),
+                        new ItemStack(Material.NETHER_WART, 32),
                         new ItemStack(Material.POTION),
-                        new ItemStack(Material.NETHER_WART),
-                        new ItemStack(Material.BLAZE_POWDER),
+                        new ItemStack(Material.NETHER_WART, 16),
+                        new ItemStack(Material.BLAZE_POWDER, 16),
                         new ItemStack(Material.NETHERITE_INGOT),
-                        new ItemStack(Material.MAGMA_CREAM)
+                        new ItemStack(Material.MAGMA_CREAM, 16)
                 ), false, 1)));
 
 //        Healing Artifact
@@ -277,6 +283,38 @@ public class CUU extends JavaPlugin {
                         new ItemStack(Material.AIR),
                         new ItemStack(Material.NETHERITE_SCRAP),
                         new ItemStack(Material.AIR)
+                ), false, 1)));
+
+        //Doom Shield (New)
+        UberItems.putItem("doom_shield", new doom_shield(Material.SHIELD, "Doom Shield", UberRarity.UNFINISHED, false, false, false,
+                List.of(
+                        new UberAbility("Doom Shield", AbilityType.NONE, "When Shield is broken by an axe there is a 10% chance that the attacker is launched into the sky (30 blocks)")),
+                new UberCraftingRecipe(Arrays.asList(
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.FEATHER, 64),
+                        new ItemStack(Material.SHIELD),
+                        new ItemStack(Material.FEATHER, 64),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8)
+                ), false, 1)));
+        
+        //Wither Staff (New)
+        UberItems.putItem("doom_staff", new doom_staff(Material.STICK, "Doom Staff", UberRarity.UNFINISHED, false, false, false,
+                List.of(
+                        new UberAbility("Doom Staff", AbilityType.RIGHT_CLICK, "When right clicked summons 2 wither skeletons that attack any player the user attacks, they have 100 health each, they despawn in 60 seconds (5 Minute Cooldown)")),
+                new UberCraftingRecipe(Arrays.asList(
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.TRIDENT),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16)
                 ), false, 1)));
 
     }

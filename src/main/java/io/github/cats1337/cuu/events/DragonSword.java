@@ -16,11 +16,9 @@ import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -34,6 +32,7 @@ public class DragonSword implements Listener {
     private static final Logger logger = LogManager.getLogger(DragonSword.class);
     public static BukkitRunnable dsBossBar;
     private static List<BukkitTask> tasks = new ArrayList<>();
+    private static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
     @EventHandler
     public void onDragonDeath(EntityDeathEvent e) {
@@ -46,9 +45,6 @@ public class DragonSword implements Listener {
                 dragonBattle.generateEndPortal(false);
                 Location btmPod = findBottomPodium(world);
                 spawnPodium(btmPod);
-                assert btmPod != null;
-                replaceBlocks(btmPod, Material.RED_STAINED_GLASS);
-                ItemManager.setRitualActive(true);
             }
         }
     }
@@ -75,6 +71,8 @@ public class DragonSword implements Listener {
         if (loc == null) {
             return;
         }
+        // Clear previous tasks
+
         BukkitTask spWait = new BukkitRunnable() {
             @Override
             public void run() {
@@ -104,7 +102,7 @@ public class DragonSword implements Listener {
 
                             showBossBar("§6§lDoom Sword", ItemManager.getRitualTime("dragon"));
                             ItemManager.setExists("DOOM_SWORD", true);
-                            ItemManager.setRitualActive(true);
+                            ItemManager.setRitualActive(true); // Ritual is now inactive
 
                             Bukkit.getOnlinePlayers().forEach(p -> p.showTitle(titler));
                         }
@@ -152,8 +150,6 @@ public class DragonSword implements Listener {
         return null;
     }
 
-    static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
-
     public static void showBossBar(String title, int seconds) {
         bossBar.setTitle(title);
 
@@ -174,21 +170,6 @@ public class DragonSword implements Listener {
                     String timeString = (sec < 10) ? min + ":0" + sec : min + ":" + sec;
                     bossBar.setTitle(title + " §8| §bTime:§r " + timeString);
                     bossBar.setProgress((double) remainingSeconds / seconds);
-
-                    // 15 minutes | 900 | 100%
-                    // 10 minutes | 600 | aka 33%
-                    // 5 minutes | 300 | aka 66%
-                    // 2 minutes | 120 | aka 83%
-
-                    // if time remaining is 67% or more, color is blue
-                    // if time remaining is 33% or more, color is purple
-                    // if time remaining is 17% or more, color is pink
-                    // if time remaining is less than 17%, color is green
-
-                    // get 67% of the total time: seconds * 0.67
-                    // 900 * 0.67 = 603 ~10 minutes
-                    // 900 * 0.33 = 297 ~5 minutes
-                    // 900 * 0.17 = 153 ~2 minutes
 
                     if (remainingSeconds >= seconds * 0.67) {
                         bossBar.setColor(BarColor.BLUE);
@@ -240,7 +221,10 @@ public class DragonSword implements Listener {
     public static void cancelDsword() {
         bossBar.removeAll();
         ItemManager.setRitualActive(false);
-        replaceBlocks(findBottomPodium(Bukkit.getWorld("world_the_end")), Material.END_PORTAL);
+        Location btmPod = findBottomPodium(Bukkit.getWorld("world_the_end"));
+        if (btmPod != null) {
+            replaceBlocks(btmPod, Material.END_PORTAL);
+        }
 
         // Cancel BukkitRunnable
         if (dsBossBar != null) {
@@ -248,13 +232,15 @@ public class DragonSword implements Listener {
         }
 
         // Cancel BukkitTasks
+        cancelTasks();
+    }
+
+    private static void cancelTasks() {
         for (BukkitTask task : tasks) {
             if (task != null) {
                 task.cancel();
             }
         }
-
-        // Clear the list
         tasks.clear();
     }
 }
