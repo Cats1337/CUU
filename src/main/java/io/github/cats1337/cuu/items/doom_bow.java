@@ -38,11 +38,16 @@ public class doom_bow extends UberItem {
         item.addUnsafeEnchantment(Enchantment.ARROW_FIRE, 1);
 
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.setUnbreakable(true);
         item.setItemMeta(meta);
 //        add Tag "doom_bow" to item
     }
-    public void getSpecificLorePrefix(List<String> lore, ItemStack item) { }
+    public void getSpecificLorePrefix(List<String> lore, ItemStack item) {
+        lore.add("§7Flame");
+        lore.add("§7Infinity");
+        lore.add("§7Power 15");
+    }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }
     public boolean leftClickBlockAction(Player player, PlayerInteractEvent event, Block block, ItemStack item) { return false; }

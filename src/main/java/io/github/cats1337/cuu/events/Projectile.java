@@ -87,17 +87,11 @@ public class Projectile implements Listener {
                     // Apply poison 3 for 6 seconds
                     p.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 3 * 20, 3));
                     // Pierce shield
-                    p.damage(1);
+                    p.damage(7); // 1 = 0.5 heart
                 }
             }
         }
     }
-
-
-            // check if the entity hit is a player
-            // if player, apply posion 3 for 6 seconds
-            // check if player has shield, if so, apply wither 3 for 6 seconds, and pierce shield (apply damage to player)
-            // poison 3 arrow
 
     public static void showBossBar(Player p, String title, int seconds) {
         bossBar.setTitle(title);
@@ -150,6 +144,15 @@ public class Projectile implements Listener {
             }
         }.runTaskTimer(CUU.getInstance(), 0L, 20L); // Run every second
         tasks.add(bossBarTask);
+    }
+
+    public static void cancelTasks() {
+        for (BukkitTask task : tasks) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        tasks.clear();
     }
 
 

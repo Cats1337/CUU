@@ -6,6 +6,7 @@ import io.github.cats1337.cuu.commands.UtilCommands;
 import io.github.cats1337.cuu.events.*;
 import io.github.cats1337.cuu.items.*;
 import io.github.cats1337.cuu.utils.ItemManager;
+import io.github.cats1337.cuu.utils.MobUtils;
 import io.github.cats1337.cuu.utils.Rituals;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -27,6 +28,7 @@ public class CUU extends JavaPlugin {
     private ContainerManager containerManager;
     private CommandManager cmdManager;
     private Rituals rituals;
+    private MobUtils mobUtils;
 
     public static CUU getInstance() {
         return CUU.getPlugin(CUU.class);
@@ -67,10 +69,11 @@ public class CUU extends JavaPlugin {
         containerManager.init(this);
 
         rituals = new Rituals();
+        MobUtils.initialize();
     }
 
     public void onDisable() {
-        // posts exit message in chat
+        // Post exit message in chat
         getLogger().info(getDescription().getName() + " V: " + getDescription().getVersion() + " has been disabled");
 
         // Cancel tasks
@@ -78,6 +81,8 @@ public class CUU extends JavaPlugin {
         if (rituals != null) {
             Rituals.cancelRitual();
         }
+        MobUtils.cancelTasks();
+        Projectile.cancelTasks();
     }
 
     // NEW UBER ITEM CHECKLIST
@@ -123,7 +128,7 @@ public class CUU extends JavaPlugin {
 //       Doom Chestplate
         UberItems.putItem("doom_chestplate", new doom_chestplate(Material.NETHERITE_CHESTPLATE, "Doom Chestplate", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Chestplate", AbilityType.NONE, "Grants the player strength 2 while wearing")),
+                        new UberAbility("Doom Chestplate", AbilityType.NONE, "Grants the player Strength 2 while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.SHULKER_SHELL, 4),
                         new ItemStack(Material.END_CRYSTAL, 4),
@@ -139,7 +144,7 @@ public class CUU extends JavaPlugin {
 //        Doom Leggings
         UberItems.putItem("doom_leggings", new doom_leggings(Material.NETHERITE_LEGGINGS, "Doom Leggings", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Leggings", AbilityType.NONE, "Grants the player fire resistance 1 while wearing")),
+                        new UberAbility("Doom Leggings", AbilityType.NONE, "Grants the player Fire Resistance 1 while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.MAGMA_CREAM, 16),
                         new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
@@ -155,7 +160,7 @@ public class CUU extends JavaPlugin {
 //        Doom Boots
         UberItems.putItem("doom_boots", new doom_boots(Material.NETHERITE_BOOTS, "Doom Boots", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Boots", AbilityType.NONE, "Grants the player an extra 40% knockback resistance and speed 1 while wearing")),
+                        new UberAbility("Doom Boots", AbilityType.NONE, "Grants the player an extra 40% Knockback Resistance and speed 1 while wearing")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.RABBIT_FOOT),
                         new ItemStack(Material.TOTEM_OF_UNDYING),
@@ -171,12 +176,12 @@ public class CUU extends JavaPlugin {
 //        Doom Sword
         UberItems.putItem("doom_sword", new doom_sword(Material.NETHERITE_SWORD, "Doom Sword", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Sword", AbilityType.NONE, "Grants the player resistance 1 while in inventory")), null));
+                        new UberAbility("Doom Sword", AbilityType.NONE, "Grants the player Resistance 1 while in inventory")), null));
 
 //        Doom Bow
         UberItems.putItem("doom_bow", new doom_bow(Material.BOW, "Doom Bow", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Bow", AbilityType.NONE, (ItemManager.getConfigInt("doombowCooldown")) +" Second Cooldown per shot, gives slowness 4 for 10 seconds after firing")),
+                        new UberAbility("Doom Bow", AbilityType.NONE, (ItemManager.getConfigInt("doombowCooldown")) +" Second Cooldown per shot, gives Slowness 4 for 10 seconds after firing")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.ECHO_SHARD, 4),
                         new ItemStack(Material.ENDER_EYE, 4),
@@ -208,7 +213,7 @@ public class CUU extends JavaPlugin {
 //        Doom Pickaxe
         UberItems.putItem("doom_pickaxe", new doom_pickaxe(Material.NETHERITE_PICKAXE, "Doom Pickaxe", UberRarity.MYTHIC, false, false, false,
                 List.of(
-                        new UberAbility("Doom Pickaxe", AbilityType.NONE, "Grants the player haste 2 while in inventory")),
+                        new UberAbility("Doom Pickaxe", AbilityType.NONE, "Grants the player Haste 2 while in inventory")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.SCULK_CATALYST, 64),
                         new ItemStack(Material.GUNPOWDER, 64),
@@ -220,6 +225,39 @@ public class CUU extends JavaPlugin {
                         new ItemStack(Material.GUNPOWDER, 64),
                         new ItemStack(Material.SCULK_CATALYST, 64)
                 ), false, 1)));
+
+        //Doom Shield (New)
+        UberItems.putItem("doom_shield", new doom_shield(Material.SHIELD, "Doom Shield", UberRarity.UNFINISHED, false, false, false,
+                List.of(
+                        new UberAbility("Doom Shield", AbilityType.NONE, "When Shield is broken by an axe there is a 10% chance that the attacker is launched into the sky (30 blocks)")),
+                new UberCraftingRecipe(Arrays.asList(
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.FEATHER, 64),
+                        new ItemStack(Material.SHIELD),
+                        new ItemStack(Material.FEATHER, 64),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
+                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
+                        new ItemStack(Material.GILDED_BLACKSTONE, 8)
+                ), false, 1)));
+
+        //Wither Staff (New)
+        UberItems.putItem("doom_staff", new doom_staff(Material.STICK, "Doom Staff", UberRarity.MYTHIC, false, false, false,
+                List.of(
+                        new UberAbility("Doom Staff", AbilityType.RIGHT_CLICK, "When right clicked summons 2 wither skeletons that attack other players, they have 100 health each, and despawn in 60 seconds (5 Minute Cooldown)")),
+                new UberCraftingRecipe(Arrays.asList(
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.TRIDENT),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16),
+                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
+                        new ItemStack(Material.WITHER_ROSE, 16)
+                ), false, 1)));
+
 
 //        Doom Potion
         UberItems.putItem("doom_potion", new doom_potion(Material.SPLASH_POTION, "Doom Potion", UberRarity.EPIC, false, false, false,
@@ -256,7 +294,7 @@ public class CUU extends JavaPlugin {
 //        Bucket Of Golden Carrots
         UberItems.putItem("bucket_of_golden_carrots", new golden_carrot_bucket(Material.MILK_BUCKET, "Bucket Of Golden Carrots", UberRarity.RARE, false, false, false,
                 List.of(
-                        new UberAbility("Bucket Of Golden Carrots", AbilityType.NONE, "Grants full hunger and saturation")),
+                        new UberAbility("Bucket Of Golden Carrots", AbilityType.NONE, "Grants full hunger and saturation 20 second cooldown")),
                 new UberCraftingRecipe(Arrays.asList(
                         new ItemStack(Material.GOLDEN_CARROT, 64),
                         new ItemStack(Material.GOLD_BLOCK),
@@ -284,38 +322,5 @@ public class CUU extends JavaPlugin {
                         new ItemStack(Material.NETHERITE_SCRAP),
                         new ItemStack(Material.AIR)
                 ), false, 1)));
-
-        //Doom Shield (New)
-        UberItems.putItem("doom_shield", new doom_shield(Material.SHIELD, "Doom Shield", UberRarity.UNFINISHED, false, false, false,
-                List.of(
-                        new UberAbility("Doom Shield", AbilityType.NONE, "When Shield is broken by an axe there is a 10% chance that the attacker is launched into the sky (30 blocks)")),
-                new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
-                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
-                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
-                        new ItemStack(Material.FEATHER, 64),
-                        new ItemStack(Material.SHIELD),
-                        new ItemStack(Material.FEATHER, 64),
-                        new ItemStack(Material.GILDED_BLACKSTONE, 8),
-                        new ItemStack(Material.PHANTOM_MEMBRANE, 8),
-                        new ItemStack(Material.GILDED_BLACKSTONE, 8)
-                ), false, 1)));
-        
-        //Wither Staff (New)
-        UberItems.putItem("doom_staff", new doom_staff(Material.STICK, "Doom Staff", UberRarity.UNFINISHED, false, false, false,
-                List.of(
-                        new UberAbility("Doom Staff", AbilityType.RIGHT_CLICK, "When right clicked summons 2 wither skeletons that attack any player the user attacks, they have 100 health each, they despawn in 60 seconds (5 Minute Cooldown)")),
-                new UberCraftingRecipe(Arrays.asList(
-                        new ItemStack(Material.WITHER_ROSE, 16),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
-                        new ItemStack(Material.WITHER_ROSE, 16),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
-                        new ItemStack(Material.TRIDENT),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
-                        new ItemStack(Material.WITHER_ROSE, 16),
-                        new ItemStack(Material.WITHER_SKELETON_SKULL, 4),
-                        new ItemStack(Material.WITHER_ROSE, 16)
-                ), false, 1)));
-
     }
 }

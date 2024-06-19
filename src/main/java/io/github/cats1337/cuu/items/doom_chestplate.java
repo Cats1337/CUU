@@ -9,8 +9,13 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.trim.ArmorTrim;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
 import thirtyvirus.uber.UberItem;
 import thirtyvirus.uber.helpers.UberAbility;
 import thirtyvirus.uber.helpers.UberCraftingRecipe;
@@ -31,12 +36,23 @@ public class doom_chestplate extends UberItem {
     public void onItemStackCreate(ItemStack item) {
         item.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
         item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
+
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        ArmorMeta armorMeta = (ArmorMeta) meta;
+        ArmorTrim armorTrim = new ArmorTrim(TrimMaterial.REDSTONE, TrimPattern.SILENCE);
+
+        armorMeta.setTrim(armorTrim);
+        armorMeta.addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
+
         meta.setUnbreakable(true);
         item.setItemMeta(meta);
 
     }
-    public void getSpecificLorePrefix(List<String> lore, ItemStack item) { }
+    public void getSpecificLorePrefix(List<String> lore, ItemStack item) {
+        lore.add("§7Protection V");
+        lore.add("§cCurse Of Binding");
+    }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }
     public boolean leftClickBlockAction(Player player, PlayerInteractEvent event, Block block, ItemStack item) { return false; }

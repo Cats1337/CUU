@@ -1,20 +1,20 @@
 package io.github.cats1337.cuu.events;
 
+import com.marcusslover.plus.lib.text.Text;
 import io.github.cats1337.cuu.utils.NameCheck;
 import io.github.cats1337.cuu.utils.Passive;
 import io.github.cats1337.cuu.utils.ItemManager;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 
 public class Invent implements Listener {
@@ -26,57 +26,36 @@ public class Invent implements Listener {
     private void inventoryClose(InventoryCloseEvent e) {
         Player p = (Player) e.getPlayer();
 
-        // Check inventory for 'Healing Artifact' and 'Doom Potion' items
-        // Ensure the player only has 16 Healing Artifacts and 2 Doom Potions max, drop excess items
-        for (Map.Entry<String, Integer> entry : NameCheck.extractInvNameCount(p).entrySet()) {
-            String itemName = entry.getKey();
-            int itemCount = entry.getValue();
+        // Check and handle excess items
+        handleExcessItems(p, "Healing Artifact", 16);
+        handleExcessItems(p, "Doom Potion", 2);
 
-            if ("Healing Artifact".equals(itemName) && itemCount > 16) {
-                int excessAmount = itemCount - 16;
-                removeExcessItems(p, itemName, excessAmount);
-            }
-
-            if ("Doom Potion".equals(itemName) && itemCount > 2) {
-                int excessAmount = itemCount - 2;
-                removeExcessItems(p, itemName, excessAmount);
+        // Apply or remove passive effects
+        if (ItemManager.checkOwnItem(p)) {
+            String[] ownedItems = ItemManager.getOwnedItems(p);
+            if (ownedItems.length > 0) {
+                applyPassiveEffects(p, ownedItems);
             }
         }
+    }
 
-        // --------={ Passive Effects }=--------
 
-        // If player doesn't own any items, ignore
-        if (!ItemManager.checkOwnItem(p)) {
-            return;
+    private void handleExcessItems(Player p, String itemName, int maxAllowed) {
+        int currentCount = NameCheck.extractInvNameCount(p).getOrDefault(itemName, 0);
+        if (currentCount > maxAllowed) {
+            removeExcessItems(p, itemName, currentCount - maxAllowed);
         }
+    }
 
-        String[] ownedItems = ItemManager.getOwnedItems(p);
-
-        // Convert owned item names to display names
-        String[] itemNames = Arrays.stream(ownedItems)
-                .map(NameCheck::convertToDisplayName)
-                .toArray(String[]::new);
-
-        // If player doesn't own any items, ignore
-        if (ownedItems.length == 0) {
-            return;
-        }
-
-        // Get contents of player's inventory, removing any null values
-        ItemStack[] contents = Arrays.stream(p.getInventory().getContents())
+    private void applyPassiveEffects(Player p, String[] ownedItems) {
+        String[] inventoryItemNames = Arrays.stream(p.getInventory().getContents())
                 .filter(Objects::nonNull)
-                .toArray(ItemStack[]::new);
-
-        // Get display names of items in player's inventory
-        String[] itemNamesInInventory = Arrays.stream(contents)
                 .filter(NameCheck::checkName)
                 .map(NameCheck::extractItemName)
                 .toArray(String[]::new);
 
-        // Iterate through owned items and check if they are not in the inventory
-        for (String itemName : itemNames) {
-            boolean found = Arrays.stream(itemNamesInInventory).anyMatch(inventoryItemName -> itemName.equals(inventoryItemName));
-            if (found) {
+        for (String itemName : ownedItems) {
+            if (Arrays.asList(inventoryItemNames).contains(itemName)) {
                 Passive.givePassiveEffect(p, itemName);
             } else {
                 Passive.removePassiveEffect(p, itemName);
@@ -84,44 +63,22 @@ public class Invent implements Listener {
         }
     }
 
-
-    // Method to remove excess items from the player's inventory
     private void removeExcessItems(Player p, String itemName, int excessAmount) {
         ItemStack[] contents = p.getInventory().getContents();
         for (int i = 0; i < contents.length && excessAmount > 0; i++) {
             ItemStack item = contents[i];
             if (item == null) continue;
+
             if (NameCheck.extractItemName(item).equals(itemName)) {
-                if (item.getAmount() <= excessAmount) {
-                    excessAmount -= item.getAmount();
-                    // hotbar is slots: 0-8, inventory is slots: 9-35
-                    // start at 35 and reverse to 0 to remove form the hotbar last
-                    for (int j = 35; j >= 0; j--) {
-                        if (Objects.requireNonNull(p.getInventory().getItem(j)).equals(item)) {
-                            p.getInventory().setItem(j, null);
-                            break;
-                        }
-                    }
-                    // Drop the excess item on the ground
+                int itemAmount = item.getAmount();
+                if (itemAmount <= excessAmount) {
+                    excessAmount -= itemAmount;
+                    p.getInventory().setItem(i, null);
                     p.getWorld().dropItem(p.getLocation(), item);
                 } else {
-                    // Create a new ItemStack with the updated amount
-                    ItemStack updatedItem = item.clone();
-                    updatedItem.setAmount(item.getAmount() - excessAmount);
-                    p.getInventory().setItem(i, updatedItem); // Update the stack amount
-
-                    for (int k = 35; k >= 0; k--) {
-                        if (Objects.requireNonNull(p.getInventory().getItem(k)).equals(item)) {
-                            p.getInventory().setItem(k, updatedItem);
-                            break;
-                        }
-                    }
-
-                    // Drop the excess amount on the ground
-                    ItemStack excessItem = item.clone();
-                    excessItem.setAmount(excessAmount);
-                    p.getWorld().dropItem(p.getLocation(), excessItem);
-                    excessAmount = 0; // No more excess to remove
+                    item.setAmount(itemAmount - excessAmount);
+                    p.getWorld().dropItem(p.getLocation(), new ItemStack(item.getType(), excessAmount));
+                    excessAmount = 0;
                 }
             }
         }
@@ -130,52 +87,81 @@ public class Invent implements Listener {
 
     @EventHandler
     private void onInventoryAction(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player p)) return;
 
-        if(!(e.getWhoClicked() instanceof Player p)) { return; } // if not player, ignore
         ItemStack item = e.getCurrentItem();
-        if (item == null || !NameCheck.checkName(item)) { return; }
+        if (item == null || !NameCheck.checkName(item)) return;
 
-        if(
-            e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
-            e.getAction() == InventoryAction.PLACE_ALL ||
-            e.getAction() == InventoryAction.PLACE_ONE ||
-            e.getAction() == InventoryAction.PICKUP_HALF ||
-            e.getAction() == InventoryAction.PICKUP_ONE ||
-            e.getAction() == InventoryAction.PICKUP_ALL ||
-            e.getAction() == InventoryAction.HOTBAR_SWAP ||
-            e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
-        ) {
-            if(!p.getInventory().contains(item)) {
-                Passive.removePassiveEffect(p, NameCheck.extractItemName(item));
-                ItemManager.removeItemOwner(NameCheck.extractItemName(item));
+        InventoryAction action = e.getAction();
+        if (isActionToUpdatePassiveEffect(action)) {
+            String itemName = NameCheck.extractItemName(item);
+            if (!p.getInventory().contains(item)) {
+                Passive.removePassiveEffect(p, itemName);
+                ItemManager.removeItemOwner(itemName);
             } else {
-                Passive.givePassiveEffect(p, NameCheck.extractItemName(item));
+                Passive.givePassiveEffect(p, itemName);
+            }
+        }
+        isPlacingInContainer(e, p);
+    }
+
+    private boolean isActionToUpdatePassiveEffect(InventoryAction action) {
+        return action == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
+                action == InventoryAction.PLACE_ALL ||
+                action == InventoryAction.PLACE_ONE ||
+                action == InventoryAction.PICKUP_HALF ||
+                action == InventoryAction.PICKUP_ONE ||
+                action == InventoryAction.PICKUP_ALL ||
+                action == InventoryAction.HOTBAR_SWAP ||
+                action == InventoryAction.HOTBAR_MOVE_AND_READD;
+    }
+
+    private void isPlacingInContainer(InventoryClickEvent e, Player p) {
+
+        // Works
+        if (e.getClick().isShiftClick()) {
+            Inventory clickedInventory = e.getClickedInventory();
+            if (clickedInventory == e.getWhoClicked().getInventory()) {
+                ItemStack clickedItem = e.getCurrentItem();
+                if (clickedItem != null && (NameCheck.checkName(clickedItem))) {
+                    e.setCancelled(true);
+                    p.sendMessage("§cYou cannot shift click Uber Items out of your inventory!");
+                }
             }
         }
 
-//        // If doom item is placed in any sort of container, like chest, furnace, barrel, etc. delete the item and announce it
-//        if (e.getAction() == InventoryAction.PLACE_ALL || e.getAction() == InventoryAction.PLACE_ONE || e.getAction() == InventoryAction.PLACE_SOME) {
-//            if (NameCheck.checkName(item)) {
-//                e.setCancelled(true);
-//                p.sendMessage("§cYou cannot place Doom Items in containers!");
-//                p.getWorld().dropItem(p.getLocation(), item);
-////                e.setCurrentItem(null);
-//            }
-//        }
-
-
-
+        // Not working
+        Inventory clickedInventory = e.getClickedInventory();
+        if (clickedInventory != e.getWhoClicked().getInventory()){
+            ItemStack onCursor = e.getCursor();
+            if (onCursor != null && (NameCheck.checkName(onCursor))) {
+                e.setCancelled(true);
+                p.sendMessage("§cYou cannot place Uber Items into containers!");
+            }
+        }
     }
+
+    // Detect when player opens a container, they'll have more slots than the default 36 (9x4)
+    // if it's just their inventory (36 + 5 armor slots), that's fine
+    // don't allow them to place items in chests, hoppers, etc.
+
+
 
     @EventHandler
     private void onPickups(PlayerAttemptPickupItemEvent e) {
         Player p = e.getPlayer();
         ItemStack pickedUpItem = e.getItem().getItemStack();
 
-        if (!NameCheck.checkName(pickedUpItem)) { return; } // if the item is not an UberItem, ignore it
+        if (!NameCheck.checkName(pickedUpItem)) return;
 
         String itemName = NameCheck.extractItemName(pickedUpItem);
+        handlePickedUpDoomItems(e, p, pickedUpItem, itemName);
 
+        // Register ownership for UberItems
+        registerItemOwnership(p, pickedUpItem);
+    }
+
+    private void handlePickedUpDoomItems(PlayerAttemptPickupItemEvent e, Player p, ItemStack pickedUpItem, String itemName) {
         switch (itemName) {
             case "Doom Crown":
                 e.setCancelled(true);
@@ -187,9 +173,8 @@ public class Invent implements Listener {
                         p.getInventory().addItem(p.getInventory().getHelmet()); // add the helmet to the inventory
                     }
                 }
-                p.getInventory().setHelmet(pickedUpItem); // equip the Doom Crown
+                p.getInventory().setHelmet(pickedUpItem);
                 p.playSound(p.getLocation(), "item.armor.equip_chain", 1, 1); // play the armor equip sound
-
                 break;
             case "Doom Chestplate":
                 e.setCancelled(true);
@@ -203,7 +188,6 @@ public class Invent implements Listener {
                 }
                 p.getInventory().setChestplate(pickedUpItem);
                 p.playSound(p.getLocation(), "item.armor.equip_chain", 1, 1);
-
                 break;
             case "Doom Leggings":
                 e.setCancelled(true);
@@ -217,7 +201,6 @@ public class Invent implements Listener {
                 }
                 p.getInventory().setLeggings(pickedUpItem);
                 p.playSound(p.getLocation(), "item.armor.equip_chain", 1, 1);
-
                 break;
             case "Doom Boots":
                 e.setCancelled(true);
@@ -231,94 +214,49 @@ public class Invent implements Listener {
                 }
                 p.getInventory().setBoots(pickedUpItem);
                 p.playSound(p.getLocation(), "item.armor.equip_chain", 1, 1);
-
                 break;
 
-            case "Doom Sword":
-            case "Doom Pickaxe":
-            case "Doom Axe":
+            // Give passive effect for items
+            case "Doom Sword": case "Doom Pickaxe": case "Doom Axe":
                 Passive.givePassiveEffect(p, itemName);
                 break;
 
-            case "Doom Potion":
-                int currentDoomPotionCount = NameCheck.extractInvNameCount(p).getOrDefault("Doom Potion", 0);
-                int maxPotions = ItemManager.getConfigInt("maxPotions");
-                int remainingDoomPotions = maxPotions - currentDoomPotionCount;
-                int amountPot = pickedUpItem.getAmount();
+            case "Doom Potion": case "Healing Artifact":
+                int maxCount = itemName.equals("Doom Potion") ? ItemManager.getConfigInt("maxPotions") : ItemManager.getConfigInt("maxArtifacts");
+                if (maxCount < 0) return; // Skip if no limit
 
-                if (maxPotions >= -1){ break; } // if maxPotions is -1<, ignore
-
-                if (currentDoomPotionCount == maxPotions) {
-                    e.setCancelled(true); // Cancel pickup if max count reached
-                    break;
+                int currentCount = NameCheck.extractInvNameCount(p).getOrDefault(itemName, 0);
+                if (currentCount + pickedUpItem.getAmount() > maxCount) {
+                    int excess = currentCount + pickedUpItem.getAmount() - maxCount;
+                    pickedUpItem.setAmount(maxCount - currentCount);
+                    e.getItem().setItemStack(new ItemStack(pickedUpItem.getType(), excess));
                 }
-
-                if (currentDoomPotionCount >= maxPotions || currentDoomPotionCount + amountPot > maxPotions) {
-                    e.setCancelled(true); // Cancel pickup if max count reached or picking up would exceed max
-                    int excessAmount = Math.max(amountPot - remainingDoomPotions, 0);
-                    if (excessAmount > 0) {
-                        ItemStack excessItem = pickedUpItem.clone();
-                        excessItem.setAmount(excessAmount);
-                        p.getWorld().dropItem(p.getLocation(), excessItem); // Drop the excess items to the ground
-                    }
-                    pickedUpItem.setAmount(Math.min(amountPot, remainingDoomPotions)); // Adjust the amount to pick up
-                }
-                break;
-
-            case "Healing Artifact":
-                int currentHealingArtifactCount = NameCheck.extractInvNameCount(p).getOrDefault("Healing Artifact", 0);
-                int maxArtifacts = ItemManager.getConfigInt("maxArtifacts");
-                int remainingHealingArtifacts = maxArtifacts - currentHealingArtifactCount;
-                int amountHeal = pickedUpItem.getAmount();
-
-                if (maxArtifacts >= -1){ break; }
-
-                if (currentHealingArtifactCount == maxArtifacts) {
-                    e.setCancelled(true); // Cancel pickup if max count reached
-                    break;
-                }
-
-                if (currentHealingArtifactCount >= maxArtifacts || currentHealingArtifactCount + amountHeal > maxArtifacts) {
-                    e.setCancelled(true); // Cancel pickup if max count reached or picking up would exceed max
-                    int excessAmount = Math.max(amountHeal - remainingHealingArtifacts, 0);
-                    if (excessAmount > 0) {
-                        ItemStack excessItem = pickedUpItem.clone();
-                        excessItem.setAmount(excessAmount);
-                        p.getWorld().dropItem(p.getLocation(), excessItem); // Drop the excess items to the ground
-                    }
-                    pickedUpItem.setAmount(Math.min(amountHeal, remainingHealingArtifacts)); // Adjust the amount to pick up
-                }
-                break;
-
-
-
         }
-
-        // convert item name to config item name format
-        String fItem = NameCheck.extractItemName(pickedUpItem).toUpperCase().replace(" ", "_");
-
-        // check if the item is in the config
-        for (String item : ItemManager.getConfigItems()) {
-            if (item.equalsIgnoreCase(fItem)) {
-                ItemManager.setItemOwner(fItem, p);
-            }
-        }
-
     }
+
+    private void registerItemOwnership(Player p, ItemStack item) {
+        ItemManager.setItemOwner(NameCheck.extractItemName(item), p);
+        Passive.givePassiveEffect(p, NameCheck.extractItemName(item));
+    }
+
 
     @EventHandler
     private void onDrop(PlayerDropItemEvent e) {
         Player p = e.getPlayer();
-        ItemStack item = e.getItemDrop().getItemStack();
+        ItemStack droppedItem = e.getItemDrop().getItemStack();
 
-        if (!NameCheck.checkName(item)) { return; }
-        Passive.removePassiveEffect(p, NameCheck.extractItemName(item));
+        if (!NameCheck.checkName(droppedItem)) return;
 
-        // check if item is in a hopper, if it is, delete it and create a new item with the same properties
-        if (e.getItemDrop().getLocation().getBlock().getType().name().contains("HOPPER")) {
-            e.getItemDrop().remove();
-            p.getWorld().dropItem(p.getLocation(), item);
-        }
+        String itemName = NameCheck.extractItemName(droppedItem);
+        Passive.removePassiveEffect(p, itemName);
+//
+//        // check if item is in a hopper, if it is, delete it and create a new item with the same properties
+//        if (e.getItemDrop().getLocation().getBlock().getType().name().contains("HOPPER")) {
+//            e.setCancelled(true);
+////            p.getInventory().addItem(droppedItem);
+//            p.sendMessage("§cYou cannot drop this item into a hopper!");
+//        }
+
 
     }
 }

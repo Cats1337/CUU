@@ -247,12 +247,15 @@ public class Rituals {
         bossBar.removeAll();
         ItemManager.setRitualActive(false);
 
+        cancelTasks();
+    }
+
+    private static void cancelTasks() {
         for (BukkitTask task : tasks) {
             if (task != null) {
                 task.cancel();
             }
         }
-
         tasks.clear();
     }
 }

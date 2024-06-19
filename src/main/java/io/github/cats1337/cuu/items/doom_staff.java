@@ -41,7 +41,9 @@ public class doom_staff extends UberItem {
         item.setItemMeta(meta);
         Utilities.setCustomModelData(item, 1337);
     }
-    public void getSpecificLorePrefix(List<String> lore, ItemStack item) { }
+    public void getSpecificLorePrefix(List<String> lore, ItemStack item) {
+        lore.add("§7Sweeping Edge II");
+    }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }
     public boolean leftClickBlockAction(Player player, PlayerInteractEvent event, Block block, ItemStack item) { return false; }

@@ -3,20 +3,28 @@ package io.github.cats1337.cuu.utils;
 import com.marcusslover.plus.lib.text.Text;
 import io.github.cats1337.cuu.CUU;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.*;
 import org.bukkit.loot.Lootable;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MobUtils {
 
     private static final String TEAM_NAME = "doomMob";
     private static Scoreboard scoreboard;
+    private static final List<BukkitTask> tasks = new ArrayList<>();
+    private static final List<Entity> mobs = new ArrayList<>();
 
-    // Static initializer to set up the scoreboard, ensures scoreboard is set up before any other methods are called, preventing NPEs
-    static {
+    // Initialize scoreboard in a method to avoid static context issues
+    public static void initialize() {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager != null) {
             scoreboard = manager.getMainScoreboard();
@@ -40,25 +48,24 @@ public class MobUtils {
 
         // summon amount of mobs around the player, randomize the location (within 3 blocks of the player)
         for (int i = 0; i < amount; i++) {
-            Entity entity = p.getWorld().spawnEntity(p.getLocation().add(Math.random() * 3, 0, Math.random() * 3), mob);
+            Location spawnLocation = p.getLocation().add(Math.random() * 6 - 3, 0, Math.random() * 6 - 3);
+            Entity entity = p.getWorld().spawnEntity(spawnLocation, mob);
 
-            Lootable lootable = (Lootable) entity;
-            lootable.setLootTable(null);
+            if (entity instanceof Lootable lootable) {
+                lootable.setLootTable(null);
+            }
 
-            Damageable doomMob = (Damageable) lootable;
-            doomMob.setMaxHealth(health);
-            doomMob.setHealth(health);
-            doomMob.setCustomName("§b" + p.name() + "§b's§4§l Summon");
-            doomMob.addScoreboardTag("DOOM_MOB");
-            doomMob.setCustomNameVisible(false);
+            if (entity instanceof Damageable doomMob) {
+                doomMob.setMaxHealth(health);
+                doomMob.setHealth(health);
+                doomMob.setCustomName("§b" + p.getName() + "§b's§4§l Summon");
+                doomMob.addScoreboardTag("DOOM_MOB");
+                doomMob.setCustomNameVisible(false);
 
-
-            // remove weapon
-
-            // remove DeathLootTable
-
-            addMobToTeam(doomMob);
-            mobTimer(p, entity, time);
+                addMobToTeam(doomMob);
+                mobTimer(p, doomMob, time);
+                mobs.add(entity);
+            }
 
         }
         addPlayerToTeam(p);
@@ -101,20 +108,38 @@ public class MobUtils {
         }
     }
 
+    // Delete mob and remove from team
     public static void deleteMob(Entity mob) {
         removeMobFromTeam(mob); // Remove from team
-        mob.getLocation().getWorld().playSound(mob.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 1.0f);
+        mob.getLocation().getWorld().playSound(mob.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 0.5f);
         mob.remove(); // Delete mob
+        mobs.remove(mob); // Remove from list
     }
 
     // Mob timer to despawn mobs after a certain amount of time
     public static void mobTimer(Player p, Entity mob, int seconds) {
-        Bukkit.getScheduler().runTaskLater(CUU.getInstance(), () -> {
-            deleteMob(mob);
-            removePlayerFromTeam(p);
-            Text.of("§c§oDoom Mob have despawned!").send(p);
-        }, seconds * 20L); // Convert seconds to ticks
+        BukkitTask mobTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                deleteMob(mob);
+                removePlayerFromTeam(p);
+                Text.of("§c§oDoom Mob has despawned!").send(p);
+            }
+        }.runTaskLater(CUU.getInstance(), seconds * 20L); // Convert seconds to ticks
+        tasks.add(mobTask);
     }
 
+    // Cancel tasks and cleanup
+    public static void cancelTasks() {
+        for (BukkitTask task : tasks) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        for (Entity mob : mobs) {
+            deleteMob(mob);
+        }
+        tasks.clear();
+    }
 
 }
