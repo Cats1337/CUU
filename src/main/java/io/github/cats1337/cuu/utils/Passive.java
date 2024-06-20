@@ -12,16 +12,32 @@ public class Passive {
 
         switch (item) {
             case "DOOM_CROWN":
-                p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, -1, 2));
+                if (p.getInventory().getHelmet() != null && NameCheck.convertToConfigNameItem(p.getInventory().getHelmet()).equals( item)) {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, -1, 2));
+                    break;
+                }
+                removePassiveEffect(p, itemName);
                 break;
             case "DOOM_CHESTPLATE":
-                p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, -1, 1));
+                if (p.getInventory().getChestplate() != null && NameCheck.convertToConfigNameItem(p.getInventory().getChestplate()).equals( item)) {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, -1, 1));
+                    break;
+                }
+                removePassiveEffect(p, itemName);
                 break;
             case "DOOM_LEGGINGS":
-                p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, -1, 0));
+                if (p.getInventory().getLeggings() != null && NameCheck.convertToConfigNameItem(p.getInventory().getLeggings()).equals( item)) {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, -1, 0));
+                    break;
+                }
+                removePassiveEffect(p, itemName);
                 break;
             case "DOOM_BOOTS":
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, -1, 0));
+                if (p.getInventory().getBoots() != null && NameCheck.convertToConfigNameItem(p.getInventory().getBoots()).equals( item)) {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, -1, 0));
+                    break;
+                }
+                removePassiveEffect(p, itemName);
                 break;
             case "DOOM_SWORD":
                 p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, -1, 0));

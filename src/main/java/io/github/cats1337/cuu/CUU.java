@@ -55,6 +55,7 @@ public class CUU extends JavaPlugin {
         pm.registerEvents(new Projectile(), this);
         pm.registerEvents(new Consumption(), this);
         pm.registerEvents(new DragonSword(), this);
+        pm.registerEvents(new Shield(), this);
 
         pm.registerEvents(new Damage(), this);
         pm.registerEvents(new UberCraft(), this);
@@ -83,6 +84,7 @@ public class CUU extends JavaPlugin {
         }
         MobUtils.cancelTasks();
         Projectile.cancelTasks();
+        Shield.cancelTasks();
     }
 
     // NEW UBER ITEM CHECKLIST

@@ -1,12 +1,14 @@
 package io.github.cats1337.cuu.events;
 
+import io.github.cats1337.cuu.CUU;
+import io.github.cats1337.cuu.utils.ItemManager;
 import io.github.cats1337.cuu.utils.NameCheck;
-import org.bukkit.Bukkit;
+import net.kyori.adventure.text.Component;
 import org.bukkit.EntityEffect;
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,6 +17,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
@@ -24,83 +28,151 @@ import java.util.UUID;
 
 public class Shield implements Listener {
     private final HashMap<UUID, Long> cooldown;
+    private final List<UUID> charged = new ArrayList<>();
     public Shield() {this.cooldown = new HashMap<>();}
-    private static final long COOLDOWN_TIME = 30 * 1000; // 30 seconds
+    private static final long COOLDOWN_TIME = ItemManager.getConfigInt("shieldCooldown") * 1000L; // 30 seconds
     private static final int CHARGE_TIME = 5; // 5 seconds
     private static final List<BukkitTask> tasks = new ArrayList<>();
 //    static BossBar bossBar = Bukkit.createBossBar("doombow_cooldown", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
 
     // on shield break (10% chance to launch attacker into the sky)
-    @EventHandler
-    private void onShieldBreak(EntityDamageByEntityEvent e) {
-        // check if the entity being attacked is a player
-        if (!(e.getEntity() instanceof Player attacker)) return; // if not, ignore
 
-        String itemName = NameCheck.extractItemName(attacker.getInventory().getItemInMainHand());
-        // if not in mainhand, check offhand
-        if (!itemName.equals("Doom Shield")) {
-            itemName = NameCheck.extractItemName(attacker.getInventory().getItemInOffHand());
-        } else {
-            return;
-        }
+    @EventHandler
+    public void onShieldBreak(EntityDamageByEntityEvent e) {
+        // This triggers anytime, not just when a shield is broken...
+        // when shield breaks:
 
 //        EntityEffect.SHIELD_BREAK
 
+        // if shield is broken
+        if (!(e.getEntity() instanceof Player p)) return;
 
-        // Check if the player is holding the Doom Shield using the NameCheck helper
-        if (itemName.equals("Doom Shield")) {
-            if (Math.random() < 0.1) { // 10% chance
-                attacker.setVelocity(attacker.getLocation().getDirection().multiply(3).setY(1)); // Launch the attacker into the sky
+        ItemStack mainHandItem = p.getInventory().getItemInMainHand();
+        ItemStack offHandItem = p.getInventory().getItemInOffHand();
+
+        if (isDoomShield(mainHandItem) || isDoomShield(offHandItem)) {
+            if(Math.random() < ItemManager.getConfigInt("shieldChance")) { // 10% chance
+//                launchShockwave(p);
+                if (e.getDamager() instanceof LivingEntity attacker) {
+                    attacker.setVelocity(attacker.getLocation().getDirection().multiply(-1.5).setY(0.75));
+                }
             }
         }
     }
 
     @EventHandler
-    public void playerInteractAir(PlayerInteractEvent e) {
-//        if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-//            EquipmentSlot hand = e.getHand();
-//            ItemStack handItem = null;
-//            if (hand == EquipmentSlot.HAND) {
-//                handItem = e.getPlayer().getInventory().getItemInMainHand();
-//            } else if (hand == EquipmentSlot.OFF_HAND) {
-//                handItem = e.getPlayer().getInventory().getItemInOffHand();
-//            }
-//            if (handItem.getType() == Material.SHIELD) {
-//                e.setCancelled(true);
-//            }
-//        }
+    public void playerInteract(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        Action action = e.getAction();
+        ItemStack item = e.getItem();
 
-        // Doom Shield:
-        // Track how long the player has the shield blocked
-        // Bar that charges up when blocking, fills up in 5? seconds
-        // When the bar is full, if player stops blocking, send a shockwave in the direction they were facing, launching all entities into the air
-        // Applies slowness 2 for 3 seconds to shield user
-        // Shockwave has a range of 7 blocks
-        // Shockwave has a cooldown of 30 seconds
-        // Shockwave applies blindness 3 for 5 seconds, weakness 3 for 5 seconds
+        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+        if (!isDoomShield(item)) return;
 
-        if (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_AIR) {
-            if (e.getHand() == EquipmentSlot.HAND){
-                ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
-                if(e.getHand() == EquipmentSlot.OFF_HAND){
-                    item = e.getPlayer().getInventory().getItemInOffHand();
+        if (e.getHand() == EquipmentSlot.HAND || e.getHand() == EquipmentSlot.OFF_HAND){
+            startChargingShield(p);
+        }
+
+        // when stop blocking (shield)
+
+    }
+
+    private boolean isDoomShield(ItemStack item) {
+        return item != null && item.getType() == Material.SHIELD && NameCheck.extractItemName(item).equals("Doom Shield");
+    }
+
+    private void startChargingShield(Player p) {
+        if (isOnCooldown(p)) {
+            p.sendMessage("§cDoom Shield is still on cooldown!");
+            return;
+        }
+
+        showChargingProgress(p);
+
+        BukkitTask shieldCharge = new BukkitRunnable() {
+            int ticksElapsed = 0;
+
+            @Override
+            public void run() {
+                ticksElapsed++;
+
+                if (ticksElapsed >= CHARGE_TIME * 20) {
+//                    launchShockwave(p, shield);
+                    charged.add(p.getUniqueId());
+                    cancelCooldown(p);
+                    this.cancel();
                 }
-                if (item.getType() == Material.SHIELD && NameCheck.extractItemName(item).equals("Doom Shield")) {
-                    // Start charging the shield bar
-                    // Apply slowness 2 for 5 seconds
-                    // When the bar is full, play sound, when released, launch all entities in a 7 block radius into the air, shockwave
+            }
+        }.runTaskTimer(CUU.getInstance(), 0, 1);
+        tasks.add(shieldCharge);
+    }
 
-                    // ActionBar message: "Charging Shield"■□□□□
-                    // ActionBar message: "Charging Shield"■■□□□ etc.
-                    String actionMessage = "§eCharging Shield: §c□□□□□ §b5s";
-                    String p = e.getPlayer().getName();
-                    e.getPlayer().sendActionBar(actionMessage);
+    private void showChargingProgress(Player player) {
+        BukkitTask shieldProg = new BukkitRunnable() {
+            int ticksElapsed = 0;
 
+            @Override
+            public void run() {
+                ticksElapsed++;
+
+                if (ticksElapsed <= CHARGE_TIME * 20) {
+                    int progress = ticksElapsed / (CHARGE_TIME * 20 / 5); // 5 segments
+                    player.sendActionBar(Component.text("§eCharging Shield: §c" + getProgressBar(progress) + " §b" + (CHARGE_TIME - ticksElapsed / 20) + "s"));
+                } else {
+                    cancel();
                 }
+            }
+        }.runTaskTimer(CUU.getInstance(), 0, 1);
+        tasks.add(shieldProg);
+    }
+
+    private String getProgressBar(int progress) {
+        // §7■■■■■
+        // §c■§7■■■■
+        // §c■§c■§7■■■
+        // §e■§e■§e■§7■■
+        // §e■§e■§e■§e■§7■
+        // §a■■■■■
+
+        return switch (progress) {
+            case 1 -> "§c■§7■■■■";
+            case 2 -> "§6■■§7■■■";
+            case 3 -> "§e■■■§7■■";
+            case 4 -> "§a■■■■§7■";
+            case 5 -> "§2■■■■■";
+            default -> "§7■■■■■";
+        };
+    }
+
+    private void launchShockwave(Player p) {
+        charged.remove(p.getUniqueId());
+
+        p.playSound(p.getLocation(), "entity.lightning_bolt.impact", 2F, .3F);
+
+        Location shockwaveOrigin = p.getLocation().add(p.getLocation().getDirection());
+        double range = 7.0;
+
+        for (Entity entity : p.getNearbyEntities(range, range, range)) {
+            if (entity instanceof LivingEntity livingEntity) {
+                livingEntity.addPotionEffect(PotionEffectType.BLINDNESS.createEffect(5*20, 2));
+                livingEntity.addPotionEffect(PotionEffectType.WEAKNESS.createEffect(5*20, 1));
+
+                entity.setVelocity(entity.getLocation().toVector().subtract(shockwaveOrigin.toVector()).normalize().multiply(1.5));
             }
         }
 
+        cancelCooldown(p);
+        p.sendActionBar(Component.empty());
+        p.removePotionEffect(PotionEffectType.SLOW);
+    }
+
+    private boolean isOnCooldown(Player p) {
+        return cooldown.containsKey(p.getUniqueId()) && System.currentTimeMillis() - cooldown.get(p.getUniqueId()) < COOLDOWN_TIME;
+    }
+
+    private void cancelCooldown(Player p) {
+        cooldown.remove(p.getUniqueId());
     }
 
     public static void cancelTasks() {
@@ -111,4 +183,5 @@ public class Shield implements Listener {
         }
         tasks.clear();
     }
+
 }

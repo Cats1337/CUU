@@ -49,7 +49,6 @@ public class NameCheck {
         return isUber(itemName);
     }
 
-
     public static String convertToConfigName(String itemName){
         // Doom Bow -> DOOM_BOW
         itemName = itemName.toUpperCase().replace(" ", "_");

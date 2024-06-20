@@ -35,7 +35,6 @@ public class doom_chestplate extends UberItem {
     }
     public void onItemStackCreate(ItemStack item) {
         item.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
-        item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
 
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -51,7 +50,6 @@ public class doom_chestplate extends UberItem {
     }
     public void getSpecificLorePrefix(List<String> lore, ItemStack item) {
         lore.add("§7Protection V");
-        lore.add("§cCurse Of Binding");
     }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }

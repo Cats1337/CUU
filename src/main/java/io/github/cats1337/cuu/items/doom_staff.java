@@ -1,5 +1,6 @@
 package io.github.cats1337.cuu.items;
 
+import io.github.cats1337.cuu.utils.ItemManager;
 import io.github.cats1337.cuu.utils.MobUtils;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -33,7 +34,7 @@ public class doom_staff extends UberItem {
     }
     public void onItemStackCreate(ItemStack item) {
 
-        item.addUnsafeEnchantment(Enchantment.SWEEPING_EDGE, 2);
+        item.addUnsafeEnchantment(Enchantment.KNOCKBACK, 1);
 
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -42,16 +43,16 @@ public class doom_staff extends UberItem {
         Utilities.setCustomModelData(item, 1337);
     }
     public void getSpecificLorePrefix(List<String> lore, ItemStack item) {
-        lore.add("§7Sweeping Edge II");
+        lore.add("§7Knockback I");
     }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }
     public boolean leftClickBlockAction(Player player, PlayerInteractEvent event, Block block, ItemStack item) { return false; }
     public boolean rightClickAirAction(Player player, ItemStack item) {
 
-        if (Utilities.enforceCooldown(player, "doom-staff", 300, item, true)) return false;
+        if (Utilities.enforceCooldown(player, "doom-staff", ItemManager.getConfigInt("staffCooldown"), item, true)) return false;
 
-        MobUtils.summonMob(player, EntityType.WITHER_SKELETON, 2, 100, 60);
+        MobUtils.summonMob(player, EntityType.WITHER_SKELETON, ItemManager.getConfigInt("staffMobs"), 100, ItemManager.getConfigInt("staffDuration") * 20);
         return false;
     }
     public boolean rightClickBlockAction(Player player, PlayerInteractEvent event, Block block, ItemStack item) { return false; }

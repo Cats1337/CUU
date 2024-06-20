@@ -38,7 +38,6 @@ public class doom_boots extends UberItem {
         item.addUnsafeEnchantment(Enchantment.PROTECTION_FALL, 10);
         item.addUnsafeEnchantment(Enchantment.DEPTH_STRIDER, 3);
         item.addUnsafeEnchantment(Enchantment.SOUL_SPEED, 3);
-        item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
 
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -56,7 +55,6 @@ public class doom_boots extends UberItem {
         lore.add("§7Feather Falling X");
         lore.add("§7Depth Strider III");
         lore.add("§7Soul Speed III");
-        lore.add("§cCurse Of Binding");
     }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }

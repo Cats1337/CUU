@@ -37,7 +37,6 @@ public class doom_leggings extends UberItem {
         item.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
         item.addUnsafeEnchantment(Enchantment.PROTECTION_EXPLOSIONS, 5);
         item.addUnsafeEnchantment(Enchantment.SWIFT_SNEAK, 3);
-        item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
 
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -54,7 +53,6 @@ public class doom_leggings extends UberItem {
         lore.add("§7Protection V");
         lore.add("§7Blast Protection V");
         lore.add("§7Swift Sneak III");
-        lore.add("§cCurse Of Binding");
     }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }

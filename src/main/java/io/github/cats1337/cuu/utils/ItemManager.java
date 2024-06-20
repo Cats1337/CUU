@@ -103,6 +103,12 @@ public class ItemManager {
         return plugin.getConfig().getString(key);
     }
 
+    // getItemOwnerPlayer - get the owner of an item as a player
+    public static Player getItemOwnerPlayer(String itemName) {
+        String owner = getItemOwner(itemName);
+        return plugin.getServer().getPlayer(owner);
+    }
+
     // setItemOwner - set the owner of an item
     public static void setItemOwner(String itemName, Player p) {
         String key = "items." + itemName + ".owner";

@@ -36,7 +36,6 @@ public class doom_crown extends UberItem {
         item.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
         item.addUnsafeEnchantment(Enchantment.OXYGEN, 3);
         item.addUnsafeEnchantment(Enchantment.WATER_WORKER, 1);
-        item.addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1);
 
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -53,7 +52,6 @@ public class doom_crown extends UberItem {
         lore.add("§7Protection V");
         lore.add("§7Respiration III");
         lore.add("§7Aqua Affinity");
-        lore.add("§cCurse Of Binding");
     }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
     public boolean leftClickAirAction(Player player, ItemStack item) { return false; }
