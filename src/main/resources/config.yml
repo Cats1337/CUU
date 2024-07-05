@@ -43,3 +43,4 @@ variables:
   staffDuration: 60 # seconds
   shieldChance: 10 # 10%
   shieldCooldown: 30 # seconds
+  shieldCharge: 5 # seconds

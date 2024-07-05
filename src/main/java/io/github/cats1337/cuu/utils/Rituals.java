@@ -3,13 +3,16 @@ package io.github.cats1337.cuu.utils;
 import io.github.cats1337.cuu.CUU;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.entity.*;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -20,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Rituals {
-    private static final Logger logger = LogManager.getLogger(Rituals.class);
     private static List<BukkitTask> tasks = new ArrayList<>();
     static BossBar bossBar = Bukkit.createBossBar("title", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
@@ -56,7 +58,9 @@ public class Rituals {
         );
         p.showTitle(titler);
 
-        showBossBar(ritualTitle, ItemManager.getRitualTime("ritual"));
+        new Thread(() -> {
+            showBossBar(ritualTitle, ItemManager.getRitualTime("ritual"));
+        }).start();
         createHologram(loc, itemName, itemUb, ItemManager.getRitualTime("ritual"));
         ItemManager.setRitualActive(true);
     }
@@ -224,7 +228,7 @@ public class Rituals {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        logger.error("Interrupted exception", e);
+                        Thread.currentThread().interrupt();
                     }
                 }
 

@@ -7,6 +7,7 @@ import com.marcusslover.plus.lib.command.TabCompleteContext;
 import com.marcusslover.plus.lib.text.Text;
 import com.marcusslover.plus.lib.text.Tiny;
 import io.github.cats1337.cuu.events.DragonSword;
+import io.github.cats1337.cuu.events.Shield;
 import io.github.cats1337.cuu.utils.ItemManager;
 import io.github.cats1337.cuu.utils.ITabCompleterHelper;
 import io.github.cats1337.cuu.utils.NameCheck;

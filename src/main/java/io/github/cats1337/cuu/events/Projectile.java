@@ -3,9 +3,8 @@ package io.github.cats1337.cuu.events;
 import io.github.cats1337.cuu.CUU;
 import io.github.cats1337.cuu.utils.ItemManager;
 import io.github.cats1337.cuu.utils.NameCheck;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -28,7 +27,6 @@ import java.util.UUID;
 public class Projectile implements Listener {
 
     private final HashMap<UUID, Long> cooldown;
-    private static final Logger logger = LogManager.getLogger(DragonSword.class);
     public Projectile() {
         this.cooldown = new HashMap<>();
     }
@@ -36,7 +34,6 @@ public class Projectile implements Listener {
     static BossBar bossBar = Bukkit.createBossBar("doombow_cooldown", BarColor.BLUE, BarStyle.SEGMENTED_20);
 
     @EventHandler
-//    on bow shoot
     private void onBowShoot(EntityShootBowEvent e) {
         int cd = ItemManager.getConfigInt("doombowCooldown");
         // Check if the bow is doom bow
@@ -46,27 +43,37 @@ public class Projectile implements Listener {
                 if (!cooldown.containsKey(p.getUniqueId()) || System.currentTimeMillis() - cooldown.get(p.getUniqueId()) > (cd * 1000L)) { // 20 seconds
                     cooldown.put(p.getUniqueId(), System.currentTimeMillis());
                     // Apply cooldown
+                    p.playSound(p.getLocation(), "block.respawn_anchor.deplete", 2F, 2F);
                     // Give slowness 4 for 10 seconds
                     p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 10 * 20, 3));
 
                     e.setCancelled(true);
 
-                    // Warden sonic boom particles in direction of arrow
-                    p.getWorld().spawnParticle(Particle.SONIC_BOOM, e.getProjectile().getLocation(), 25, 0.5, 0.5, 0.5, 0.1);
-
+                    // Launch WitherSkull projectile
                     WitherSkull skull = e.getEntity().launchProjectile(WitherSkull.class);
                     skull.setVelocity(e.getProjectile().getVelocity());
 
                     skull.addScoreboardTag("DOOM_BOW_PROJECTILE");
-                    skull.getScoreboardTags();
-                    skull.getScoreboardTags().add("DOOM_BOW_PROJECTILE");
-                    skull.getScoreboardTags();
 
+                    // Spawn sonic boom particles that follow the projectile
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (skull.isValid() && !skull.isDead()) {
+                                // Calculate particle spawn location
+                                Location particleLocation = skull.getLocation().add(skull.getVelocity().normalize().multiply(0.5));
+
+                                // Spawn sonic boom particles
+                                p.getWorld().spawnParticle(Particle.SONIC_BOOM, particleLocation, 5, 0.1, 0.1, 0.1, 0);
+                            } else {
+                                cancel();
+                            }
+                        }
+                    }.runTaskTimer(CUU.getInstance(), 0L, 2L); // Adjust interval for smoother effect
 
                     // Show boss bar in a separate thread to avoid blocking the main thread
                     new Thread(() -> {
-                        showBossBar(p,"Cooldown", cd);
-
+                        showBossBar(p, "Cooldown", cd);
                     }).start();
                 } else {
                     e.setCancelled(true);
@@ -74,6 +81,7 @@ public class Projectile implements Listener {
             }
         }
     }
+
 
     // Check if the entity hit is a player using the doom bow
 

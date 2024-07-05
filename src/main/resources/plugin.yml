@@ -7,6 +7,7 @@ description: Cats UberItems Utilities. Plugin commissioned by linktr.ee/xetho__
 website: https://cats1337.github.io
 depend:
   - UberItems
+  - ProtocolLib
 permissions:
   cuu.help:
     description: Allows user to view help

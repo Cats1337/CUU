@@ -5,9 +5,7 @@ import com.marcusslover.plus.lib.container.ContainerManager;
 import io.github.cats1337.cuu.commands.UtilCommands;
 import io.github.cats1337.cuu.events.*;
 import io.github.cats1337.cuu.items.*;
-import io.github.cats1337.cuu.utils.ItemManager;
-import io.github.cats1337.cuu.utils.MobUtils;
-import io.github.cats1337.cuu.utils.Rituals;
+import io.github.cats1337.cuu.utils.*;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -56,6 +54,9 @@ public class CUU extends JavaPlugin {
         pm.registerEvents(new Consumption(), this);
         pm.registerEvents(new DragonSword(), this);
         pm.registerEvents(new Shield(), this);
+
+        // remove everyone from charged
+        Shield.clearCharged();
 
         pm.registerEvents(new Damage(), this);
         pm.registerEvents(new UberCraft(), this);
@@ -229,7 +230,7 @@ public class CUU extends JavaPlugin {
                 ), false, 1)));
 
         //Doom Shield (New)
-        UberItems.putItem("doom_shield", new doom_shield(Material.SHIELD, "Doom Shield", UberRarity.UNFINISHED, false, false, false,
+        UberItems.putItem("doom_shield", new doom_shield(Material.SHIELD, "Doom Shield", UberRarity.MYTHIC, false, false, false,
                 List.of(
                         new UberAbility("Doom Shield", AbilityType.NONE, "When Shield is broken by an axe there is a 10% chance that the attacker is launched into the sky (30 blocks)")),
                 new UberCraftingRecipe(Arrays.asList(

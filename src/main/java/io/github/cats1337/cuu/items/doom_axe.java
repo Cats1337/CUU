@@ -15,6 +15,7 @@ import thirtyvirus.uber.UberItem;
 import thirtyvirus.uber.helpers.UberAbility;
 import thirtyvirus.uber.helpers.UberCraftingRecipe;
 import thirtyvirus.uber.helpers.UberRarity;
+import thirtyvirus.uber.helpers.Utilities;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class doom_axe extends UberItem {
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
         item.setItemMeta(meta);
+        Utilities.setCustomModelData(item, 1337);
     }
     public void getSpecificLorePrefix(List<String> lore, ItemStack item) { }
     public void getSpecificLoreSuffix(List<String> lore, ItemStack item) { }
