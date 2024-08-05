@@ -218,4 +218,21 @@ public class ItemManager {
         return (config.getInt("variables." + var));
     }
 
+    // TODO: Fix this up,
+    // cleanItems - remove excess uberitems from player's inventories, chests, etc
+    public static void cleanItems() {
+        for (String item : getConfigItems()) {
+            for (Player p : plugin.getServer().getOnlinePlayers()) {
+                // Check if player has doom items in inventory
+                // If they do, check if they own the item, if not, remove it
+                if (p.getInventory().contains(Material.getMaterial(item))) {
+                    if (!p.getName().equals(getItemOwner(item))) {
+                        p.getInventory().remove(Material.getMaterial(item));
+                        Text.of(p, "&cYou don't own " + NameCheck.convertToDisplayName(item) + ", it has been removed from your inventory.\n &4If you believe this is an error, please contact an admin.");
+                    }
+                }
+            }
+        }
+    }
+
 }
