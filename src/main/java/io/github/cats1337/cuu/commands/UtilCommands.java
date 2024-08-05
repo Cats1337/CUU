@@ -34,7 +34,8 @@ public class UtilCommands implements ICommand {
             " &b/cuu list <player> &7- &fList all items owned by a player\n" +
             " &b/cuu remove owner <itemName> &7- &fRemove the owner of an item\n" +
             " &b/cuu reset <itemName> &7- &fRemove owner, set exists/crafted to false for an item\n" +
-            " &b/cuu cancel &7- &fCancel any active ritual";
+            " &b/cuu cancel &7- &fCancel any active ritual\n" +
+            " &b/cuu clean &7- &fGet rid of extra items that may be duped" +;
 
 
     @Override
@@ -241,6 +242,15 @@ public class UtilCommands implements ICommand {
                 } else {
                     Text.of(prefix + "§cNo active ritual to cancel.").send(sender);
                 }
+                break;
+
+            case "clean":
+                if (!sender.hasPermission("cuu.clean")){
+                    Text.of("§cYou do not have permission to use this command.").send(sender);
+                    return false;
+                }
+                ItemManager.cleanItems();
+                Text.of(prefix + "§3Items cleaned.").send(sender);
                 break;
         }
         return true;
