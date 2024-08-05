@@ -46,7 +46,6 @@ public class Invent implements Listener {
 
         // check if player owns any items, if not, ignore
         // if they do, check if the item is in the player's inventory, if not, remove passive effect
-
         if(ItemManager.checkOwnItem(p)) { // if player owns any items
             for (String itemName : ItemManager.getOwnedItems(p)) { // for each item the player owns
                 if (Arrays.stream(p.getInventory().getContents()) // check if the item is in the player's inventory
@@ -106,6 +105,25 @@ public class Invent implements Listener {
     // if it is, remove it from the container, and drop it on the ground
     // GameEvent CONTAINER_OPEN
 
+    // Disallow placing UberItems in anvils
+    @EventHandler
+    private void onAnvilUse(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        ItemStack item = e.getItem();
+
+        // if interacted block is not an anvil, ignore
+        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.ANVIL) return;
+        if(e,getClickedBlock().getType() == Material.ANVIL) Text.of("§cAnvil").send(p);
+
+        if (item == null || !NameCheck.checkName(item)) return;
+
+        if (ItemManager.checkItemInConfig(NameCheck.convertToConfigNameItem(item))) {
+            if(p.getGameMode().name().equals("CREATIVE")){return;}
+            Text.of("§cYou cannot place this item in an anvil!").send(p);
+            e.setCancelled(true);
+        }
+    }
+
 
     @EventHandler
     private void onInventoryAction(InventoryClickEvent e) {
@@ -135,6 +153,13 @@ public class Invent implements Listener {
 
         if(ItemManager.checkItemInConfig(NameCheck.convertToConfigNameItem(e.getCursor()))){
             Passive.removePassiveEffect(p, NameCheck.convertToConfigNameItem(e.getCursor()));
+        }
+
+        // if item is not in player's inventory, remove passive effect
+        if (!Arrays.stream(p.getInventory().getContents())
+                .filter(Objects::nonNull)
+                .anyMatch(i -> NameCheck.extractItemName(i).equals(NameCheck.extractItemName(item)))) {
+            Passive.removePassiveEffect(p, NameCheck.extractItemName(item));
         }
 
 
